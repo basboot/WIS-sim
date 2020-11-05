@@ -1,11 +1,11 @@
 clear all;
 
-calibration_data = readmatrix("20201103_fill_all.csv");
+calibration_data = readmatrix("20201105_fill_all_5_33cm.csv");
 
 figure(1);
-plot(calibration_data(:, 2:8))
+plot(calibration_data(:, 2:8));
 
-[M, N] = size(calibration_data)
+[M, N] = size(calibration_data);
 
 lowest_point = 5;
 highest_point = 33;
@@ -45,32 +45,52 @@ minimize(objective);
 
 cvx_end
 
-%% plot again afyet calibration
+%% plot again after calibration
 
 figure(2);
-sensors = calibration_data(:, 2:8) .* a' + b'
+calibrated_sensors = calibration_data(:, 2:8) .* a' + b';
 
-plot(sensors)
-
-%% 
+plot(calibrated_sensors);
 
 
-% a =
-% 
-%     0.0183
-%     0.0053
-%     0.0183
-%     0.0183
-%     0.0183
-%     0.0053
-%     0.0053
-%     
-% b =
-% 
-%  -183.3012
-%   -64.7004
-%  -183.7719
-%  -181.5880
-%  -179.6035
-%   -58.2928
-%   -58.4973
+%% convert identification data to mm
+
+identification_data = readmatrix("20201105_equilibrium_gates_1cm.csv");
+
+figure(3);
+calibrated_identification = identification_data(:, 2:8) .* a' + b';
+
+plot(calibrated_identification)
+
+%% add flows through gate 1, 2 and 3
+area1 = 0.1853; %m2
+area2 = 0.1187; %m2
+area3 = 0.2279; %m2
+
+dt = 0.5; %sec
+
+% TODO: can this be vectorized?
+[M, N] = size(calibrated_identification);
+calibrated_identification = [calibrated_identification zeros(M, 3)];
+
+for i = 2:M
+    % use average in pool to estimate height difference between timesteps
+    dh3 = (((calibrated_identification(i, 6) + calibrated_identification(i, 7)) / 2) - ...
+        ((calibrated_identification(i-1, 6) + calibrated_identification(i-1, 7)) / 2)) * 0.001; %m
+    dh2 = (((calibrated_identification(i, 4) + calibrated_identification(i, 5)) / 2) - ...
+        ((calibrated_identification(i-1, 4) + calibrated_identification(i-1, 5)) / 2)) * 0.001; %m
+    dh1 = (((calibrated_identification(i, 2) + calibrated_identification(i, 3)) / 2) - ...
+        ((calibrated_identification(i-1, 2) + calibrated_identification(i-1, 3)) / 2)) * 0.001; %m
+    
+    % calculate flow over gate from changed water level in next gates
+    gate3 = (dh3 * area3) / dt; %m3/sec
+    gate2 = (dh2 * area2) / dt + gate3; %m3/sec
+    gate1 = (dh1 * area1) / dt + gate2 + gate3; %m3/sec
+    
+    % update data
+   calibrated_identification(i, 8:10) = [gate1 gate2 gate3]; 
+end
+
+plot(lowpass(calibrated_identification(:, 8:10), 0.01, 2))
+
+
