@@ -8,7 +8,7 @@ plot(calibration_data(:, 2:8));
 [M, N] = size(calibration_data);
 
 lowest_point = 5;
-highest_point = 33;
+highest_point = 33; 
 
 cvx_begin quiet
 
@@ -19,7 +19,7 @@ objective = 0;
 
 % 3 has high accuracy and is near source, so use as reference
 a(2) * calibration_data(1, 3) + b(2) == lowest_point;
-a(2) * calibration_data(2027, 3) + b(2) == highest_point;
+a(2) * calibration_data(M-1, 3) + b(2) == highest_point;
 
 % set constraints on the different type of sensors
 a(1) == a(3);
@@ -71,10 +71,10 @@ dt = 0.5; %sec
 
 % TODO: can this be vectorized?
 [M, N] = size(calibrated_identification);
-calibrated_identification = [calibrated_identification zeros(M, 3)];
+calibrated_identification = [calibrated_identification zeros(M, 6)];
 
 for i = 2:M
-    % use average in pool to estimate height difference between timesteps
+    % use average in pool to estimate height difference between two timesteps
     dh3 = (((calibrated_identification(i, 6) + calibrated_identification(i, 7)) / 2) - ...
         ((calibrated_identification(i-1, 6) + calibrated_identification(i-1, 7)) / 2)) * 0.001; %m
     dh2 = (((calibrated_identification(i, 4) + calibrated_identification(i, 5)) / 2) - ...
@@ -87,10 +87,47 @@ for i = 2:M
     gate2 = (dh2 * area2) / dt + gate3; %m3/sec
     gate1 = (dh1 * area1) / dt + gate2 + gate3; %m3/sec
     
+    % calculate height difference on both sides of the gate (use only
+    % sensor near the gate
+    dg1 = calibrated_identification(i, 1) - calibrated_identification(i, 2);
+    dg2 = calibrated_identification(i, 3) - calibrated_identification(i, 4);
+    dg3 = calibrated_identification(i, 5) - calibrated_identification(i, 6);
+    
     % update data
-   calibrated_identification(i, 8:10) = [gate1 gate2 gate3]; 
+   calibrated_identification(i, 8:13) = [dg1 dg2 dg3 gate1 gate2 gate3]; 
 end
 
-plot(lowpass(calibrated_identification(:, 8:10), 0.01, 2))
+figure(4);
+plot((calibrated_identification(:, 8:10)))
 
+figure(5);
+plot(lowpass(calibrated_identification(:, 11:13), 0.01, 2))
+
+%% flow vs height
+overflow = 600;
+
+figure(6);
+flow_vs_height1 = [calibrated_identification(1:overflow, 8), calibrated_identification(1:overflow, 11)];
+% sort by height for plotting
+[~,idx] = sort(flow_vs_height1(:,1)); 
+flow_vs_height1 = flow_vs_height1(idx,:);
+
+plot(flow_vs_height1(:,1), lowpass(flow_vs_height1(:,2), 0.01, 2))
+
+
+hold on;
+flow_vs_height2 = [calibrated_identification(1:overflow, 9), calibrated_identification(1:overflow, 12)];
+% sort by height for plotting
+[~,idx] = sort(flow_vs_height2(:,1)); 
+flow_vs_height2 = flow_vs_height2(idx,:);
+
+plot(flow_vs_height2(:,1), lowpass(flow_vs_height2(:,2), 0.01, 2))
+
+hold on;
+flow_vs_height3 = [calibrated_identification(1:overflow, 10), calibrated_identification(1:overflow, 13)];
+% sort by height for plotting
+[~,idx] = sort(flow_vs_height3(:,1)); 
+flow_vs_height3 = flow_vs_height3(idx,:);
+
+plot(flow_vs_height3(:,1), lowpass(flow_vs_height3(:,2), 0.01, 2))
 
