@@ -1,14 +1,19 @@
 clear all;
 
-calibration_data = readmatrix("20201105_fill_all_5_33cm.csv");
+calibration_data = readmatrix("20201117_empty_all_33-5.csv");
 
 figure(1);
 plot(calibration_data(:, 2:8));
+title("calibration data raw");
+
+%%
 
 [M, N] = size(calibration_data);
 
-lowest_point = 5;
-highest_point = 33; 
+% first
+lowest_point = 33;
+% last
+highest_point = 5; 
 
 cvx_begin quiet
 
@@ -51,16 +56,17 @@ figure(2);
 calibrated_sensors = calibration_data(:, 2:8) .* a' + b';
 
 plot(calibrated_sensors);
-
+title("calibration data - calibrated");
 
 %% convert identification data to mm
 
-identification_data = readmatrix("20201105_equilibrium_gates_1cm.csv");
+identification_data = readmatrix("20201117_empty_all_33-5.csv");
 
 figure(3);
 calibrated_identification = identification_data(:, 2:8) .* a' + b';
 
 plot(calibrated_identification)
+title("identification data - time/water heigts");
 
 %% add flows through gate 1, 2 and 3
 area1 = 0.1853; %m2
@@ -99,12 +105,14 @@ end
 
 figure(4);
 plot((calibrated_identification(:, 8:10)))
+title("identification data - time/heigt difference");
 
 figure(5);
 plot(lowpass(calibrated_identification(:, 11:13), 0.01, 2))
+title("identification data - time/flow");
 
 %% flow vs height
-overflow = 600;
+overflow = 800; % sample at which overflow at gate 4 starts
 
 figure(6);
 flow_vs_height1 = [calibrated_identification(1:overflow, 8), calibrated_identification(1:overflow, 11)];
@@ -113,7 +121,7 @@ flow_vs_height1 = [calibrated_identification(1:overflow, 8), calibrated_identifi
 flow_vs_height1 = flow_vs_height1(idx,:);
 
 plot(flow_vs_height1(:,1), lowpass(flow_vs_height1(:,2), 0.01, 2))
-
+title("identification data - height difference/flow");
 
 hold on;
 flow_vs_height2 = [calibrated_identification(1:overflow, 9), calibrated_identification(1:overflow, 12)];
