@@ -7,6 +7,12 @@ function [water_heights, timing, delta_volume, flow_in, flow_out, dt] = wis_data
     water_heights = water_heights / 100; % m
     timing = pool_data(:, 1);
 
+    water_heights_s = water_heights;
+    for I = 1:7
+        water_heights_s(:,I) = smooth(water_heights(:,I), 100);
+    end
+    
+    
     % calculate flows
     [M, ~] = size(water_heights);
 
@@ -23,10 +29,10 @@ function [water_heights, timing, delta_volume, flow_in, flow_out, dt] = wis_data
     for i = 2:M
         % calculate change in height per pool (use average for pools with 2
         % sensors)
-        dh0 = water_heights(i, 1) - water_heights(i-1, 1); 
-        dh1 = (water_heights(i, 2) - water_heights(i-1, 2) + water_heights(i, 3) - water_heights(i-1, 3)) / 2; 
-        dh2 = (water_heights(i, 4) - water_heights(i-1, 4) + water_heights(i, 5) - water_heights(i-1, 5)) / 2; 
-        dh3 = (water_heights(i, 6) - water_heights(i-1, 6) + water_heights(i, 7) - water_heights(i-1, 7)) / 2; 
+        dh0 = water_heights_s(i, 1) - water_heights_s(i-1, 1); 
+        dh1 = (water_heights_s(i, 2) - water_heights_s(i-1, 2) + water_heights_s(i, 3) - water_heights_s(i-1, 3)) / 2; 
+        dh2 = (water_heights_s(i, 4) - water_heights_s(i-1, 4) + water_heights_s(i, 5) - water_heights_s(i-1, 5)) / 2; 
+        dh3 = (water_heights_s(i, 6) - water_heights_s(i-1, 6) + water_heights_s(i, 7) - water_heights_s(i-1, 7)) / 2; 
 
         dv0 = dh0 * wis.area0;
         dv1 = dh1 * wis.area1;
@@ -36,9 +42,9 @@ function [water_heights, timing, delta_volume, flow_in, flow_out, dt] = wis_data
         delta_volume(i,:) = [dv0 dv1 dv2 dv3];
 
         fi0 = 0; % unknown
-        fi1 = dv0 / dt + fi0;
-        fi2 = dv1 / dt + fi1;
-        fi3 = dv2 / dt + fi2;
+        fi1 = -dv0 / dt + fi0;
+        fi2 = -dv1 / dt + fi1;
+        fi3 = -dv2 / dt + fi2;
 
         flow_in(i,:) = [fi0 fi1 fi2 fi3];
 
@@ -48,6 +54,8 @@ function [water_heights, timing, delta_volume, flow_in, flow_out, dt] = wis_data
         fo0 = dv1 / dt + fo1;
 
         flow_out(i,:) = [fo0 fo1 fo2 fo3];
+        
+        %water_heights = water_heights_s;
     end
 
 end
