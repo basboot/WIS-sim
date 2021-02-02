@@ -1,4 +1,4 @@
-function [water_heights, timing, delta_volume, flow_in, flow_out, dt] = wis_data(csv_file, wis)
+function [data] = wis_data(csv_file, wis)
 % load and augment csv data of the WIS lab setup
 
     pool_data = readmatrix(csv_file);
@@ -7,10 +7,13 @@ function [water_heights, timing, delta_volume, flow_in, flow_out, dt] = wis_data
     water_heights = water_heights / 100; % m
     timing = pool_data(:, 1);
 
+%     water_heights_s = water_heights;
+%     for I = 1:7
+%         water_heights_s(:,I) = smooth(water_heights(:,I), 100);
+%     end
+
+    % TODO: no smoothing anymore, cleanup
     water_heights_s = water_heights;
-    for I = 1:7
-        water_heights_s(:,I) = smooth(water_heights(:,I), 100);
-    end
     
     
     % calculate flows
@@ -23,6 +26,7 @@ function [water_heights, timing, delta_volume, flow_in, flow_out, dt] = wis_data
     delta_volume = zeros(M,4); % m3
     flow_in = zeros(M,4); % m3/sec
     flow_out = zeros(M,4); % m3/sec
+    delta_height = zeros(M,4);
 
     % TODO: can this be vectorized?
     % TODO: write more compact when done (for now this is easier to debug)
@@ -57,6 +61,27 @@ function [water_heights, timing, delta_volume, flow_in, flow_out, dt] = wis_data
         
         %water_heights = water_heights_s;
     end
+    
+    % TODO: can this be vectorized?
+    
+    for i = 1:M
+        % calculate height difference between pools
+        delta_height(i,1) = water_heights_s(i, 1) - water_heights_s(i, 2);
+        delta_height(i,2) = water_heights_s(i, 3) - water_heights_s(i, 4);
+        delta_height(i,3) = water_heights_s(i, 5) - water_heights_s(i, 6);
+        % TODO: this should be the overshot from Cantoni
+        delta_height(i,4) = water_heights_s(i, 7) - 0; % = gate height
+    end
+    
+    data.water_heights = water_heights;
+    data.timing = timing;
+    data.delta_volume = delta_volume;
+    data.delta_height = delta_height;
+    data.flow_in = flow_in;
+    data.flow_out = flow_out;
+    data.dt = dt;
+    data.sensors = pool_data(:, [3,4,7,8,11,12,15]);
+    data.actuators = pool_data(:, [5,9,13,17]);
 
 end
 

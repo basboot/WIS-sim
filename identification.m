@@ -1,30 +1,32 @@
 %% show graph to check calibration
 
 %% Load experiment data
-[water_heights, timing, delta_volume, flow_in, flow_out, dt] = ...
+step255_2_3 = ...
     wis_data("20210126_step_gate3_4_s255_no_intake.csv", wis);
 
 figure(1);
 title("Water heights");
-plot(timing/1000, water_heights);
+plot(step255_2_3.timing/1000, step255_2_3.water_heights);
 legend("s1", "s2", "s3", "s4", "s5", "s6", "s7")
+xlabel("time [s]");
+ylabel("water height [m]");
 
 figure(2);
-[input1, ~] = get_flows_for_pool(flow_in, flow_out, 3, true);
+[input1, ~] = get_flows_for_pool(step255_2_3.flow_in, step255_2_3.flow_out, 3, true);
 
-output1 = water_heights(:, 7);
-dt1 = dt;
+output1 = step255_2_3.water_heights(:, 7);
+dt1 = step255_2_3.dt;
 
 %% Load validation data
 
-[water_heights, timing, delta_volume, flow_in, flow_out, dt] = ...
+step100_2_3 = ...
     wis_data("20210126_step_gate3_4_s100_no_intake.csv", wis);
 
 figure(3)
-[input2, ~] = get_flows_for_pool(flow_in, flow_out, 3, true);
+[input2, ~] = get_flows_for_pool(step100_2_3.flow_in, step100_2_3.flow_out, 3, true);
 
-output2 = water_heights(:, 7);
-dt2 = dt;
+output2 = step100_2_3.water_heights(:, 7);
+dt2 = step100_2_3.dt;
 
 
 %% shift data (for delay) and select most reliable part
@@ -36,9 +38,9 @@ dt2 = dt;
 % pool1 1.2s (20 samples)
 % pool2 0.4s (7 samples)
 % pool3 1.4s (22 samples)
-
-[input1, output1] = shift_delay(input1(145:350), output1(145:350), 22);
-[input2, output2] = shift_delay(input2(100:590), output2(100:590), 22);
+% 
+% [input1, output1] = shift_delay(input1(145:350), output1(145:350), 0);
+% [input2, output2] = shift_delay(input2(100:590), output2(100:590), 0);
 
 output1 = output1 - output1(1);
 output2 = output2 - output2(1);
@@ -84,12 +86,12 @@ delayest(zv)
 
 Opt = tfestOptions('Display','on');
 np = [3]; % 3rd order
-nz = [2]
-ioDelay = [0];
+nz = [2];
+ioDelay = [22];
 
-mtf = tfest(zv,np,nz,ioDelay,Opt);
+mtf = tfest(ze,np,nz,ioDelay,Opt);
 
 %%
 figure(8);
-compare(ze,mtf)
+compare(zv,mtf)
 
