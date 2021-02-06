@@ -7,6 +7,7 @@ if show
     plot(input1a)
     hold on;
     plot(input1b)
+    title("Water flows");
     legend("q_{in}", "q_{out}")
 end
 
