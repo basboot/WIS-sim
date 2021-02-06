@@ -2,7 +2,7 @@ function [data] = wis_data(csv_file, wis)
 % load and augment csv data of the WIS lab setup
 
     % load data
-    pool_data = readmatrix(csv_file);
+    pool_data = readmatrix(sprintf("data/%s", csv_file));
     
 %     % resample data
 %     r = 2;
