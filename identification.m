@@ -75,7 +75,29 @@ for pool_to_identify = 1:3
 
 end
 
+%% Bode plots
+
 figure();
 bode(pool_model(1).tf, pool_model(2).tf, pool_model(3).tf)
 legend("pool1", "pool2", "pool3");
 
+% structure of the tf is a delayed second order system combined 
+% with an integrator
+
+%                              omega_n^2                      1
+%  G(s) =   e^-st * ----------------------------------  *   -----
+%                   s^2 + 2 zeta omega_n s + omega_n^2        s
+
+for pool_to_identify = 1:3
+    [omega_n,zeta,p] = damp(pool_model(pool_to_identify).tf);
+    % first pole is the integrator which has damping ratio -1
+    assert(zeta(1) == -1, 'WARNING: something went wrong, first pole was not the integrator');
+
+    % second and third poles are complex conjugates, just use the second
+    % pole for zeta and omega)n
+    pool_model(pool_to_identify).zeta = zeta(2);
+    pool_model(pool_to_identify).omega_n = omega_n(2);
+    
+    % Literature survey Jacob sec. 3-3-1.
+    pool_model(pool_to_identify).phi_wave = omega_n(2) * sqrt(1-zeta(2)^2);
+end
