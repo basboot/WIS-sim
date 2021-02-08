@@ -89,7 +89,10 @@ delayest(ze)
 
 ze.ExperimentName = sprintf("%s-%s", data_experiment.description, data_experiment.type);
 ze.Name = sprintf("%s-%s", data_experiment.filename, data_experiment.type);
-
+ze.InputName = "flow";
+ze.InputUnit = "l/s";
+ze.OutputName = "water level";
+ze.OutputUnit = "m";
 
 end
 
