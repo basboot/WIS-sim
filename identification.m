@@ -75,3 +75,7 @@ for pool_to_identify = 1:3
 
 end
 
+figure();
+bode(pool_model(1).tf, pool_model(2).tf, pool_model(3).tf)
+legend("pool1", "pool2", "pool3");
+
