@@ -1,10 +1,9 @@
-function [ze] = create_iddata(filename, wis, pool, dt, showPlot)
+function [ze] = create_iddata(data_experiment, showPlot)
 % set dt manually to avoid rounding errors
 %   Detailed explanation goes here
 
-%% Load experiment data
-data_experiment = ...
-    wis_data(filename, wis);
+pool = data_experiment.pool;
+
 
 if showPlot
     figure(1);
@@ -36,7 +35,7 @@ end
 
 output1 = data_experiment.water_levels(:, pool*2+1);
 dt1 = data_experiment.dt;
-dt1 = dt; % override
+
 %% shift data (for delay) and select most reliable part
 
 % Estimating delay not working correctly on this data
@@ -87,6 +86,9 @@ end
 %% estimate delays
 disp('delay')
 delayest(ze)
+
+ze.ExperimentName = sprintf("%s-%s", data_experiment.description, data_experiment.type);
+ze.Name = sprintf("%s-%s", data_experiment.filename, data_experiment.type);
 
 
 end

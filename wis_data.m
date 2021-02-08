@@ -1,5 +1,12 @@
-function [data] = wis_data(csv_file, wis)
+function [data] = wis_data(csv_file, wis, pool, type, description, dt)
 % load and augment csv data of the WIS lab setup
+
+    % check if descriptive arguments have been set
+    if nargin < 3
+        pool = 0;
+        type = "no type";
+        description = "no description";
+    end
 
     % load data
     pool_data = readmatrix(sprintf("data/%s", csv_file));
@@ -25,9 +32,12 @@ function [data] = wis_data(csv_file, wis)
     
     [M, ~] = size(water_levels);
 
-    % use average sample time as timestep
-    dt = ((timing(M) - timing(1)) / (M-1)) / 1000; % s
-
+    % Manually set dt to avoid rounding errors
+    if nargin < 6
+        % use average sample time as timestep
+        dt = ((timing(M) - timing(1)) / (M-1)) / 1000; % s
+    end
+    
     % init matrices to store volume change, flows and height difference
     delta_volume = zeros(M,4); % m^3
     flow_in = zeros(M,4); % m^3/sec
@@ -82,6 +92,7 @@ function [data] = wis_data(csv_file, wis)
         delta_height(i,4) = water_levels(i, 7) - 0; % = gate height
     end
     
+    % TODO: tune speed of the servos
     % apply rate limiter to actuator values
     actuators = pool_data(:, [5,9,13,17]);
     
@@ -107,6 +118,9 @@ function [data] = wis_data(csv_file, wis)
     data.dt = dt;
     data.sensors = pool_data(:, [3,4,7,8,11,12,15]);
     data.actuators = actuators;
-
+    data.filename = csv_file;
+    data.pool = pool;
+    data.type = type;
+    data.description = description;
 end
 

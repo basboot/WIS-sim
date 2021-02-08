@@ -1,39 +1,77 @@
+%% identify all pools
+data_files = size(pool_data, 2); % total number of data files
+
+for pool_to_identify = 1:3
 
 
-%% experiment
-ze1 = create_iddata("20210202_step_gate1_2_s255_no_intake.csv", wis, 1, 1/128, false);
-ze2 = create_iddata("20210202_step_gate1_2_s100_no_intake.csv", wis, 1, 1/128, false);
-ze3 = create_iddata("20210202_step_gate1_2_s25_no_intake.csv", wis, 1, 1/128, false);
+    %% experiment
 
-ze = merge(ze1, ze2, ze3)
-%% validation
+    clear ze
 
-zv1 = create_iddata("20210202_step_gate1_2_s255_no_intake.csv", wis, 1, 1/128, false);
-zv2 = create_iddata("20210202_step_gate1_2_s100_no_intake.csv", wis, 1, 1/128, false);
-zv3 = create_iddata("20210202_step_gate1_2_s25_no_intake.csv", wis, 1, 1/128, false);
+    first_iddata = true;
 
-zv = merge(ze1, ze2, ze3)
-%%
-
-% create third order model with pole at origin (type 1) with a transport
-% delay for identification
-
-% pool1 1.3
-% pool2 0.5 - 0.7
-% pool3 1.5
-init_sys = idtf(NaN(1,1),[1,NaN(1,2),0],'IODelay',0.7);
-
-% fix last coefficient, to force tfest to keep the integrator 1/s 
-init_sys.Structure.Denominator.Free = [0 1 1 0];
+    for i = 1:data_files
+        if pool_data(i).pool == pool_to_identify
+            if pool_data(i).type == "experiment"
+                if first_iddata
+                    ze = create_iddata(pool_data(i), false);
+                    first_iddata = false;
+                else
+                    ze = merge(ze, create_iddata(pool_data(i), false));
+                end
+            end
+        end
+    end
 
 
-%%
+    %% validation
 
-Opt = tfestOptions('Display','on');
+    clear zv
 
-mtf = tfest(ze,init_sys,Opt);
+    first_iddata = true;
 
-%%
-figure(8);
-compare(zv,mtf)
+    for i = 1:data_files
+        if pool_data(i).pool == pool_to_identify
+            if pool_data(i).type == "validation"
+                if first_iddata
+                    zv = create_iddata(pool_data(i), false);
+                    first_iddata = false;
+                else
+                    zv = merge(zv, create_iddata(pool_data(i), false));
+                end
+            end
+        end
+    end
+
+    %%
+
+    % create third order model with pole at origin (type 1) with a transport
+    % delay for identification
+
+    % pool1 1.3
+    % pool2 0.5 - 0.7
+    % pool3 1.5
+    init_sys = idtf(NaN(1,1),[1,NaN(1,2),0],'IODelay',wis.delays(pool_to_identify));
+
+    % fix last coefficient, to force tfest to keep the integrator 1/s 
+    init_sys.Structure.Denominator.Free = [0 1 1 0];
+
+
+    %%
+
+    Opt = tfestOptions('Display','on');
+    
+    clear mtf;
+
+    mtf = tfest(ze,init_sys,Opt);
+
+    %%
+    figure();
+    compare(zv,mtf)
+    
+    pool_model(pool_to_identify).experiment = ze;
+    pool_model(pool_to_identify).validation = zv;
+    pool_model(pool_to_identify).tf = mtf;
+
+end
 
