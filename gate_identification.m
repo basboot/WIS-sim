@@ -2,75 +2,66 @@
 
 % simplified model:
 % flow = sign(dh) * gate_opening * K * sqrt(abs(dh))
-
-%% Load experiment data
-gate3 = ...
-    wis_data("20210202_step_gate3_4_s25_no_intake2.csv", wis);
-
-% show time plot
-figure(1);
-plot(gate3.timing/1000, gate3.water_levels);
-title("Water levels");
-legend("s1", "s2", "s3", "s4", "s5", "s6", "s7")
-xlabel("time [s]");
-ylabel("water level [m]");
-
-% % Not needed anymore => automated in wis_data
-% %% change gate
-% secs_to_open = 8;
-% sps = 128;
-% value_to_open = 255;
-gate_to_open = 3;
-% 
-% gate3.actuators(1:secs_to_open * sps, gate_to_open) = linspace(0, value_to_open, secs_to_open * sps);
-
-%% show flows calculated from derivative
-figure(2);
-[f_in, f_out] = get_flows_for_pool(gate3.flow_in, gate3.flow_out, 3, false);
+% K not constant, probably due to leakage so a better approximation will
+% be:
+% flow = sign(dh) * gate_opening * K(gate_opening) * sqrt(abs(dh))
 
 
-plot(f_in);
+% Identify 3 gates
+% Identify 3 settings
+%   - use only part where gate is fully open
+% Plot results
+
+% TODO: automate data selection
+
+gate(1).data = [pool_data(1), pool_data(2), pool_data(3)];
+gate(1).setting = [25, 100, 255];
+gate(1).flow_to_use = [2, 3, 3];
+gate(1).k = zeros(1, size(gate(1).setting, 2));
+
+gate(2).data = [pool_data(4), pool_data(5), pool_data(6)];
+gate(2).setting = [25, 100, 255];
+gate(2).flow_to_use = [2, 3, 3];
+gate(2).k = zeros(1, size(gate(2).setting, 2));
+
+gate(3).data = [pool_data(7), pool_data(8), pool_data(9)];
+gate(3).setting = [25, 100, 255];
+gate(3).flow_to_use = [2, 3, 3];
+gate(3).k = zeros(1, size(gate(3).setting, 2));
+
+for gate_number = 1: 3
+    for i = 1:size(gate(gate_number).setting, 2);
+
+
+        gate(gate_number).k(i) = calculate_flow_constant(gate(gate_number).data(i), gate_number, gate(gate_number).setting(i), true, gate(gate_number).flow_to_use(i), false);
+    end
+    
+end
+
+
+%% Plot results
+figure();
 hold on;
-plot(f_out);
-title("Flows calculated using the water levels")
-legend("q_{in}", "q_{out}");
-
-%% show filtered flows, and flow estimated from difference in water height
-figure(3);
-plot(lowpass(f_in,1,1/gate3.dt))
-hold on
-plot(lowpass(f_out,1,1/gate3.dt))
-
-% TODO: use optimization tool for accurate estimation of K
-K = 0.00004;
-% 255 => 200
-gate_opening = 200; 
-plot(gate_opening * K * sign(gate3.delta_height(:,3)) .* sqrt(abs(gate3.delta_height(:,3))))
-
-cvx_begin quiet
-
-variable k 
-
-objective = 0;
-
-% sum squared error model and estimated inflow
-objective = sum((k * gate3.actuators(:,gate_to_open) .* sign(gate3.delta_height(:,3)) .* sqrt(abs(gate3.delta_height(:,3))) - f_in).^2);
-% sum squared error model and estimated outflow
-%objective = objective + sum((k * gate3.actuators(:,gate_to_open) .* sign(gate3.delta_height(:,3)) .* sqrt(abs(gate3.delta_height(:,3))) - f_out).^2);
-
-minimize(objective);
-
-cvx_end
-
-plot(k * gate3.actuators(:,gate_to_open) .* sign(gate3.delta_height(:,3)) .* sqrt(abs(gate3.delta_height(:,3))))
+for gate_number = 1: 3
+    scatter(gate(gate_number).setting, gate(gate_number).k);   
+end
 
 
-title("Filtered flows and model comparision")
-legend("q_{in}", "q_{out}", "q_{est}", "q_{solv}");
+coefficients = polyfit([gate(1).setting gate(2).setting gate(3).setting],...
+    [gate(1).k gate(2).k gate(3).k], 1);
 
-%% TODO: automate...
-
-% TODO: can this be vectorized?
-coefficients = polyfit([25, 255], [5.0, 3.5], 1);
 a_gate = coefficients (1);
 b_gate = coefficients (2);
+
+plot([0 255], [0 255] .* a_gate + b_gate);
+
+legend("gate1", "gate2", "gate3", "linear approximation");
+xlabel("servo setting");
+ylabel("flow constant");
+
+% store results in wis data
+wis.a_gate = a_gate;
+wis.b_gate = b_gate;
+
+
+
