@@ -14,10 +14,10 @@ for pool_to_identify = 1:3
         if pool_data(i).pool == pool_to_identify
             if pool_data(i).type == "experiment"
                 if first_iddata
-                    ze = create_iddata(pool_data(i), false);
+                    ze = create_iddata(pool_data(i), wis, false, false);
                     first_iddata = false;
                 else
-                    ze = merge(ze, create_iddata(pool_data(i), false));
+                    ze = merge(ze, create_iddata(pool_data(i), wis, false, false));
                 end
             end
         end
@@ -34,10 +34,10 @@ for pool_to_identify = 1:3
         if pool_data(i).pool == pool_to_identify
             if pool_data(i).type == "validation"
                 if first_iddata
-                    zv = create_iddata(pool_data(i), false);
+                    zv = create_iddata(pool_data(i), wis, false, false);
                     first_iddata = false;
                 else
-                    zv = merge(zv, create_iddata(pool_data(i), false));
+                    zv = merge(zv, create_iddata(pool_data(i), wis, false, false));
                 end
             end
         end

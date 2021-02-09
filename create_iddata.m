@@ -1,4 +1,4 @@
-function [ze] = create_iddata(data_experiment, showPlot)
+function [ze] = create_iddata(data_experiment, wis, use_gate_model, showPlot)
 % set dt manually to avoid rounding errors
 %   Detailed explanation goes here
 
@@ -19,19 +19,23 @@ if showPlot
 end
 [input1, ~] = get_flows_for_pool(data_experiment.flow_in, data_experiment.flow_out, pool, showPlot);
 
-%f_est_exp = 200 * 0.00004 * sign(data_experiment.delta_height(:,3)) .* sqrt(abs(data_experiment.delta_height(:,3)));
+% don't use flow estimated from direct measurements but from the model of
+% the gates
+if use_gate_model
+    %f_est_exp = 200 * 0.00004 * sign(data_experiment.delta_height(:,3)) .* sqrt(abs(data_experiment.delta_height(:,3)));
 
-% calculate using gate ident data
-% use k to compensate for gate opening irregularities
-% gate_to_open = 3;
-% k = (data_experiment.actuators(:,gate_to_open) .* a_gate + b_gate) * 10^-5;
-% 
-% f_est_exp = k .* data_experiment.actuators(:,gate_to_open) .* sign(data_experiment.delta_height(:,3)) .* sqrt(abs(data_experiment.delta_height(:,3)));
+    % calculate using gate ident data
+    % use k to compensate for gate opening irregularities
+    % gate_to_open = 3;
+    k = (data_experiment.actuators(:,pool) .* wis.a_gate + wis.b_gate);
+    % 
+    f_est_exp = k .* data_experiment.actuators(:,pool) .* sign(data_experiment.delta_height(:,pool)) .* sqrt(abs(data_experiment.delta_height(:,pool)));
 
-% if showPlot
-%     plot(f_est_exp)
-% end
-%input1 = f_est_exp;
+    if showPlot
+        plot(f_est_exp)
+    end
+    input1 = f_est_exp;
+end
 
 output1 = data_experiment.water_levels(:, pool*2+1);
 dt1 = data_experiment.dt;
