@@ -88,6 +88,7 @@ legend("pool1", "pool2", "pool3");
 %  G(s) =   e^-st * ----------------------------------  *   -----
 %                   s^2 + 2 zeta omega_n s + omega_n^2        s
 
+%% Calculate dominant wave frequency for each pool
 for pool_to_identify = 1:3
     [omega_n,zeta,p] = damp(pool_model(pool_to_identify).tf);
     % first pole is the integrator which has damping ratio -1
