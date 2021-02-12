@@ -575,28 +575,31 @@ end
 a = max(abs(poles));
 rho_reference = -log(abs(a))/h; % 0.0044
 
-% %% Do the Heemels LMI check for GES and L2-gain
-% if gamma < sqrt(max(eig(D'*D))) %check of Heemels's Theorem V.2, eq 48
-%     fprintf('gamma is too small according to Heemels for this matrix D.\n');
-%     % Then M is not invertible see eq. 20 of Heemels 2013
-% end
-% 
-% % Triggering parameters
-% rho = 0.0000000000001; %Tuned manually % rho > 0 , (lower bound on) the decay rate
-% % sigma = 0.15; % Tuned manually together with rho and the L2gain: 0.15 works nice in simulation
-% sigma = 0.10;
-% % sigma = 0.05; % 0.05 Very nice performance and also a great reduction of communication!
-% % sigma = 0.01; % sigma for LMI: 0.01 looks great, and still less than 25% of samples used
-% lambda = 20000000; % called gamma in Heemels 2013. L2 upper bound.
-% 
-% % Create Q
-% % Gamma = eye(10); % In our case of 1 artificial node, based: on 2*y, 2*u
-% % ng = size(Gamma, 1);
-% Q11 = (1-sigma)*C'*C;
-% Q12 = (1-sigma)*C'*D-C';
-% Q21 = (1-sigma)* D'*C - C;
-% Q22 = (D-eye(nD))'*(D-eye(nD)) - sigma*D'*D;
-% Q = [Q11, Q12; Q21, Q22];
+%% Do the Heemels LMI check for GES and L2-gain
+if gamma < sqrt(max(eig(D'*D))) %check of Heemels's Theorem V.2, eq 48
+    fprintf('gamma is too small according to Heemels for this matrix D.\n');
+    % Then M is not invertible see eq. 20 of Heemels 2013
+end
+
+% TODO: renamed rho to rho_lmi because it shadows rho used in the
+%       simulation => CHECK WHERE RHO IS USED!
+
+% Triggering parameters
+rho_lmi = 0.0000000000001; %Tuned manually % rho > 0 , (lower bound on) the decay rate
+% sigma = 0.15; % Tuned manually together with rho and the L2gain: 0.15 works nice in simulation
+sigma = 0.10;
+% sigma = 0.05; % 0.05 Very nice performance and also a great reduction of communication!
+% sigma = 0.01; % sigma for LMI: 0.01 looks great, and still less than 25% of samples used
+lambda = 20000000; % called gamma in Heemels 2013. L2 upper bound.
+
+% Create Q
+% Gamma = eye(10); % In our case of 1 artificial node, based: on 2*y, 2*u
+% ng = size(Gamma, 1);
+Q11 = (1-sigma)*C'*C;
+Q12 = (1-sigma)*C'*D-C';
+Q21 = (1-sigma)* D'*C - C;
+Q22 = (D-eye(nD))'*(D-eye(nD)) - sigma*D'*D;
+Q = [Q11, Q12; Q21, Q22];
 
 
 %% Save the workspace for use in the simulation
