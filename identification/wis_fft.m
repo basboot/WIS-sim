@@ -1,3 +1,5 @@
+%% NOT FINSHED, AND NOT USED, YET
+
 %% Frequency analysis of the pools
 
 

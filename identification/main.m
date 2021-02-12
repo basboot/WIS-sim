@@ -1,5 +1,8 @@
 clear all;
 
+%
+addpath ../functions/
+
 % set global properties
 wis_properties;
 
