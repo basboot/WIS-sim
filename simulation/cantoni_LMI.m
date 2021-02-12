@@ -615,8 +615,8 @@ disp('Workspace saved to file for use in simulation.');
 % Uncomment the next 3 lines to run the Heemels LMI check for output feeedback
 % clc;
 % fprintf('Calling the LMI-check-function.\n');
-% [status, Ph, mu] = checkheemelslmiOF(comb_contr.A, comb_contr.B, comb_contr.C, comb_contr.D, Ap, Bp, Bw, Cp, Q, h, rho, lambda);
-
+% [status, Ph, mu] = checkheemelslmiOF(comb_contr.A, comb_contr.B, comb_contr.C, comb_contr.D, Ap, Bp, Bw, Cp, Q, h, rho_lmi, lambda);
+% 
 
 
 
