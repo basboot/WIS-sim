@@ -11,6 +11,14 @@
 
 %% Parameters
 clear all; % for debug purposes, can be removed later
+
+%% Load identification results
+try
+    load('../identification/identification.mat');
+catch
+    assert(false, "File 'identification.mat' does not exist. Run identification first.");
+end
+
 % Pool model parameters
 tau = [4, 2, 4, 4, 6]; % minutes
 alpha = [6492, 2478, 6084, 5658, 7650]; % m^2
@@ -18,7 +26,7 @@ phi_wave = [0.48, 1.05, 0.48, 0.48, 0.42 ]; % rad/min (wave frequency)
 
 % CVX suddenly decided to not be able to find its own function 'vec', so:
 %addpath C:\Users\Jacob\Documents\MATLAB\CVX\cvx\functions\vec_
-addpath ../functions/
+addpath ../functions_jacob/
 
 % NOTE: The simulation was initially built for decentralized control using
 % values from Cantoni 2007: Control of large scalle irrigation systems.
