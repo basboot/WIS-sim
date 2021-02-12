@@ -1,22 +1,23 @@
-%%
-% 1   2   3     4     5   6   7     8     9   10  11    12    13  14  15    16 17
-% 155,201,10276,12877,255,202,10312,10211,255,203,10109,11867,255,204,11913,0, 170
-calibration_data = readmatrix("../data/20210202_calib_5cm.csv");
+%% calibration.m
+
+% Calibrate the presure sensors (needed to convert pressure to water level)
+
+CalibrationData = readmatrix("../data/20210202_calib_5cm.csv");
 
 % figure(1);
 % plot(calibration_data(:, [3,4,7,8,11,12, 15]));
 % title("calibration data raw (5cm)");
 
-low_value = mean(calibration_data(:, [3,4,7,8,11,12, 15]));
+low_value = mean(CalibrationData(:, [3,4,7,8,11,12, 15]));
 low = 5;
 
-calibration_data = readmatrix("../data/20210202_calib_31cm.csv");
+CalibrationData = readmatrix("../data/20210202_calib_31cm.csv");
 
 % figure(2);
 % plot(calibration_data(:, [3,4,7,8,11,12, 15]));
 % title("calibration data raw (31cm)");
 
-high_value = mean(calibration_data(:, [3,4,7,8,11,12, 15]));
+high_value = mean(CalibrationData(:, [3,4,7,8,11,12, 15]));
 high = 31;
 
 % fit data
@@ -31,8 +32,8 @@ for i = 1:N
     b(i) = coefficients (2);
 end
 
-wis.a = a;
-wis.b = b;
+Wis.a = a;
+Wis.b = b;
 
 %%
 

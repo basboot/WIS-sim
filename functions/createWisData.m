@@ -1,5 +1,13 @@
-function [data] = wis_data(csv_file, wis, pool, type, description, dt)
-% load and augment csv data of the WIS lab setup
+%% load and augment csv data of the WIS lab setup
+
+function [Data] = createWisData(csvFile, Wis, pool, type, description, dt)
+% csvFile       csv file with experiment data
+% Wis           data structure with lab setup properties
+% type          type of data (String description)
+% description   description of the data (String description)
+% dt            sampling time
+% 
+% Data          data structure with the experiment (see description below)
 
     % check if descriptive arguments have been set
     if nargin < 3
@@ -9,26 +17,14 @@ function [data] = wis_data(csv_file, wis, pool, type, description, dt)
     end
 
     % load data
-    pool_data = readmatrix(sprintf("../data/%s", csv_file));
-    
-%     % resample data
-%     r = 2;
-%     y = zeros(ceil(size(pool_data,1)/r), size(pool_data,2));
-%     for i = 1:size(pool_data,2)
-%         x = pool_data(:, i); 
-%         y(:, i) = decimate(x,r); 
-%     end
-%     pool_data = y;
+    pool_data = readmatrix(sprintf("../data/%s", csvFile));
 
     % convert pressure sensor data to water level 
-    water_levels = pool_data(:, [3,4,7,8,11,12, 15]) .* wis.a + wis.b; % cm
+    water_levels = pool_data(:, [3,4,7,8,11,12, 15]) .* Wis.a + Wis.b; % cm
     water_levels = water_levels / 100; % m
-    
-    
-    
+      
     % extract timing
     timing = pool_data(:, 1); % ms 
-    
     
     [M, ~] = size(water_levels);
 
@@ -39,7 +35,7 @@ function [data] = wis_data(csv_file, wis, pool, type, description, dt)
     end
     
     % init matrices to store volume change, flows and height difference
-    delta_volume = zeros(M,4); % m^3
+    deltaVolume = zeros(M,4); % m^3
     flow_in = zeros(M,4); % m^3/sec
     flow_out = zeros(M,4); % m^3/sec
     delta_height = zeros(M,4); % m
@@ -54,12 +50,12 @@ function [data] = wis_data(csv_file, wis, pool, type, description, dt)
         dh2 = (water_levels(i, 4) - water_levels(i-1, 4) + water_levels(i, 5) - water_levels(i-1, 5)) / 2; 
         dh3 = (water_levels(i, 6) - water_levels(i-1, 6) + water_levels(i, 7) - water_levels(i-1, 7)) / 2; 
 
-        dv0 = dh0 * wis.area0;
-        dv1 = dh1 * wis.area1;
-        dv2 = dh2 * wis.area2;
-        dv3 = dh3 * wis.area3;
+        dv0 = dh0 * Wis.area0;
+        dv1 = dh1 * Wis.area1;
+        dv2 = dh2 * Wis.area2;
+        dv3 = dh3 * Wis.area3;
 
-        delta_volume(i,:) = [dv0 dv1 dv2 dv3];
+        deltaVolume(i,:) = [dv0 dv1 dv2 dv3];
 
         % calculate flow that would have lead to this change in height
         % (ZOH) based on pools before fore the flow_in and based on the
@@ -109,18 +105,18 @@ function [data] = wis_data(csv_file, wis, pool, type, description, dt)
         end
     end
     
-    data.water_levels = water_levels;
-    data.timing = timing;
-    data.delta_volume = delta_volume;
-    data.delta_height = delta_height;
-    data.flow_in = flow_in;
-    data.flow_out = flow_out;
-    data.dt = dt;
-    data.sensors = pool_data(:, [3,4,7,8,11,12,15]);
-    data.actuators = actuators;
-    data.filename = csv_file;
-    data.pool = pool;
-    data.type = type;
-    data.description = description;
+    Data.water_levels = water_levels;
+    Data.timing = timing;
+    Data.delta_volume = deltaVolume;
+    Data.delta_height = delta_height;
+    Data.flow_in = flow_in;
+    Data.flow_out = flow_out;
+    Data.dt = dt;
+    Data.sensors = pool_data(:, [3,4,7,8,11,12,15]);
+    Data.actuators = actuators;
+    Data.filename = csvFile;
+    Data.pool = pool;
+    Data.type = type;
+    Data.description = description;
 end
 

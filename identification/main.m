@@ -1,3 +1,8 @@
+%% main.m 
+
+% Runs all scripts needed to identify the lab setup from data and saves 
+% the result as a Matlab workspace file.
+
 clear all;
 
 %% Add common functions to path
@@ -22,5 +27,5 @@ gate_identification;
 identification;
 
 %% save results for later use
-save("identification.mat", 'wis', 'pool_model')
+save("identification.mat", 'Wis', 'PoolModel')
 

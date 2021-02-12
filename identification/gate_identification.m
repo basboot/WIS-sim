@@ -1,4 +1,6 @@
-%% identify gate parameters
+%% gate_identification.m
+
+% Identify gate parameters
 
 % simplified model:
 % flow = sign(dh) * gate_opening * K * sqrt(abs(dh))
@@ -14,26 +16,24 @@
 
 % TODO: automate data selection
 
-gate(1).data = [pool_data(1), pool_data(2), pool_data(3)];
-gate(1).setting = [25, 100, 255];
-gate(1).flow_to_use = [2, 3, 3];
-gate(1).k = zeros(1, size(gate(1).setting, 2));
+Gate(1).data = [PoolData(1), PoolData(2), PoolData(3)];
+Gate(1).setting = [25, 100, 255];
+Gate(1).flow_to_use = [2, 3, 3];
+Gate(1).k = zeros(1, size(Gate(1).setting, 2));
 
-gate(2).data = [pool_data(4), pool_data(5), pool_data(6)];
-gate(2).setting = [25, 100, 255];
-gate(2).flow_to_use = [2, 3, 3];
-gate(2).k = zeros(1, size(gate(2).setting, 2));
+Gate(2).data = [PoolData(4), PoolData(5), PoolData(6)];
+Gate(2).setting = [25, 100, 255];
+Gate(2).flow_to_use = [2, 3, 3];
+Gate(2).k = zeros(1, size(Gate(2).setting, 2));
 
-gate(3).data = [pool_data(7), pool_data(8), pool_data(9)];
-gate(3).setting = [25, 100, 255];
-gate(3).flow_to_use = [2, 3, 3];
-gate(3).k = zeros(1, size(gate(3).setting, 2));
+Gate(3).data = [PoolData(7), PoolData(8), PoolData(9)];
+Gate(3).setting = [25, 100, 255];
+Gate(3).flow_to_use = [2, 3, 3];
+Gate(3).k = zeros(1, size(Gate(3).setting, 2));
 
 for gate_number = 1: 3
-    for i = 1:size(gate(gate_number).setting, 2);
-
-
-        gate(gate_number).k(i) = calculate_flow_constant(gate(gate_number).data(i), gate_number, gate(gate_number).setting(i), true, gate(gate_number).flow_to_use(i), false);
+    for i = 1:size(Gate(gate_number).setting, 2)
+        Gate(gate_number).k(i) = calculateFlowConstant(Gate(gate_number).data(i), gate_number, Gate(gate_number).setting(i), true, Gate(gate_number).flow_to_use(i), false);
     end
     
 end
@@ -43,12 +43,12 @@ end
 figure();
 hold on;
 for gate_number = 1: 3
-    scatter(gate(gate_number).setting, gate(gate_number).k);   
+    scatter(Gate(gate_number).setting, Gate(gate_number).k);   
 end
 
 
-coefficients = polyfit([gate(1).setting gate(2).setting gate(3).setting],...
-    [gate(1).k gate(2).k gate(3).k], 1);
+coefficients = polyfit([Gate(1).setting Gate(2).setting Gate(3).setting],...
+    [Gate(1).k Gate(2).k Gate(3).k], 1);
 
 a_gate = coefficients (1);
 b_gate = coefficients (2);
@@ -60,8 +60,8 @@ xlabel("servo setting");
 ylabel("flow constant");
 
 % store results in wis data
-wis.a_gate = a_gate;
-wis.b_gate = b_gate;
+Wis.a_gate = a_gate;
+Wis.b_gate = b_gate;
 
 
 
