@@ -1,7 +1,7 @@
 %%
 % 1   2   3     4     5   6   7     8     9   10  11    12    13  14  15    16 17
 % 155,201,10276,12877,255,202,10312,10211,255,203,10109,11867,255,204,11913,0, 170
-calibration_data = readmatrix("data/20210202_calib_5cm.csv");
+calibration_data = readmatrix("../data/20210202_calib_5cm.csv");
 
 % figure(1);
 % plot(calibration_data(:, [3,4,7,8,11,12, 15]));
@@ -10,7 +10,7 @@ calibration_data = readmatrix("data/20210202_calib_5cm.csv");
 low_value = mean(calibration_data(:, [3,4,7,8,11,12, 15]));
 low = 5;
 
-calibration_data = readmatrix("data/20210202_calib_31cm.csv");
+calibration_data = readmatrix("../data/20210202_calib_31cm.csv");
 
 % figure(2);
 % plot(calibration_data(:, [3,4,7,8,11,12, 15]));

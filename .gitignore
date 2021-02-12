@@ -1,3 +1,5 @@
+# Exclude cached results
+identification.mat
 
 # Created by https://www.toptal.com/developers/gitignore/api/macos,dropbox,matlab,python,pycharm,intellij
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,dropbox,matlab,python,pycharm,intellij

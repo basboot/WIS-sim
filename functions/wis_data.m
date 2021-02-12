@@ -9,7 +9,7 @@ function [data] = wis_data(csv_file, wis, pool, type, description, dt)
     end
 
     % load data
-    pool_data = readmatrix(sprintf("data/%s", csv_file));
+    pool_data = readmatrix(sprintf("../data/%s", csv_file));
     
 %     % resample data
 %     r = 2;
