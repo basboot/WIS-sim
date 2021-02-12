@@ -31,9 +31,9 @@ Gate(3).setting = [25, 100, 255];
 Gate(3).flow_to_use = [2, 3, 3];
 Gate(3).k = zeros(1, size(Gate(3).setting, 2));
 
-for gate_number = 1: 3
-    for i = 1:size(Gate(gate_number).setting, 2)
-        Gate(gate_number).k(i) = calculateFlowConstant(Gate(gate_number).data(i), gate_number, Gate(gate_number).setting(i), true, Gate(gate_number).flow_to_use(i), false);
+for iGate = 1: 3
+    for i = 1:size(Gate(iGate).setting, 2)
+        Gate(iGate).k(i) = calculateFlowConstant(Gate(iGate).data(i), iGate, Gate(iGate).setting(i), true, Gate(iGate).flow_to_use(i), false);
     end
     
 end
@@ -42,8 +42,8 @@ end
 %% Plot results
 figure();
 hold on;
-for gate_number = 1: 3
-    scatter(Gate(gate_number).setting, Gate(gate_number).k);   
+for iGate = 1: 3
+    scatter(Gate(iGate).setting, Gate(iGate).k);   
 end
 
 

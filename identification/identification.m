@@ -2,23 +2,24 @@
 
 % Identify all pools
 
-data_files = size(PoolData, 2); % total number of data files
+nPoolData = size(PoolData, 2); % total number of data files
 
-for pool_to_identify = 1:3
-
-
-    %% experiment
-
+% identify all pools
+for iPool = 1:3
+    
+    %% collect experiment data
     clear ze
 
-    first_iddata = true;
+    % keep track of first so we know if we need to merge
+    firstIddata = true;
 
-    for i = 1:data_files
-        if PoolData(i).pool == pool_to_identify
+    % search all data, for data labeled 'experiment' 
+    for i = 1:nPoolData
+        if PoolData(i).pool == iPool
             if PoolData(i).type == "experiment"
-                if first_iddata
+                if firstIddata
                     ze = createIddata(PoolData(i), Wis, false, false);
-                    first_iddata = false;
+                    firstIddata = false;
                 else
                     ze = merge(ze, createIddata(PoolData(i), Wis, false, false));
                 end
@@ -27,18 +28,19 @@ for pool_to_identify = 1:3
     end
 
 
-    %% validation
-
+    %% collect validation data
     clear zv
 
-    first_iddata = true;
+    % keep track of first so we know if we need to merge
+    firstIddata = true;
 
-    for i = 1:data_files
-        if PoolData(i).pool == pool_to_identify
+    % search all data, for data labeled 'validation' 
+    for i = 1:nPoolData
+        if PoolData(i).pool == iPool
             if PoolData(i).type == "validation"
-                if first_iddata
+                if firstIddata
                     zv = createIddata(PoolData(i), Wis, false, false);
-                    first_iddata = false;
+                    firstIddata = false;
                 else
                     zv = merge(zv, createIddata(PoolData(i), Wis, false, false));
                 end
@@ -46,21 +48,15 @@ for pool_to_identify = 1:3
         end
     end
 
-    %%
+    %% identify
 
     % create third order model with pole at origin (type 1) with a transport
     % delay for identification
+    init_sys = idtf(NaN(1,1),[1,NaN(1,2),0],'IODelay',Wis.delays(iPool));
 
-    % pool1 1.3
-    % pool2 0.5 - 0.7
-    % pool3 1.5
-    init_sys = idtf(NaN(1,1),[1,NaN(1,2),0],'IODelay',Wis.delays(pool_to_identify));
-
-    % fix last coefficient, to force tfest to keep the integrator 1/s 
+    % fix last coefficient, to force tfest to put an integrator 1/s in the
+    % transferfunction
     init_sys.Structure.Denominator.Free = [0 1 1 0];
-
-
-    %%
 
     Opt = tfestOptions('Display','on');
     
@@ -68,18 +64,17 @@ for pool_to_identify = 1:3
 
     mtf = tfest(ze,init_sys,Opt);
 
-    %%
+    %% validate
     figure();
     compare(zv,mtf)
     
-    PoolModel(pool_to_identify).experiment = ze;
-    PoolModel(pool_to_identify).validation = zv;
-    PoolModel(pool_to_identify).tf = mtf;
+    PoolModel(iPool).experiment = ze;
+    PoolModel(iPool).validation = zv;
+    PoolModel(iPool).tf = mtf;
 
 end
 
-%% Bode plots
-
+%% Bode plot of the results
 figure();
 bode(PoolModel(1).tf, PoolModel(2).tf, PoolModel(3).tf)
 legend("pool1", "pool2", "pool3");
@@ -92,16 +87,16 @@ legend("pool1", "pool2", "pool3");
 %                   s^2 + 2 zeta omega_n s + omega_n^2        s
 
 %% Calculate dominant wave frequency for each pool
-for pool_to_identify = 1:3
-    [omega_n,zeta,p] = damp(PoolModel(pool_to_identify).tf);
+for iPool = 1:3
+    [omega_n,zeta,p] = damp(PoolModel(iPool).tf);
     % first pole is the integrator which has damping ratio -1
     assert(zeta(1) == -1, 'WARNING: something went wrong, first pole was not the integrator');
 
     % second and third poles are complex conjugates, just use the second
     % pole for zeta and omega)n
-    PoolModel(pool_to_identify).zeta = zeta(2);
-    PoolModel(pool_to_identify).omega_n = omega_n(2);
+    PoolModel(iPool).zeta = zeta(2);
+    PoolModel(iPool).omega_n = omega_n(2);
     
     % Literature survey Jacob sec. 3-3-1.
-    PoolModel(pool_to_identify).phi_wave = omega_n(2) * sqrt(1-zeta(2)^2);
+    PoolModel(iPool).phi_wave = omega_n(2) * sqrt(1-zeta(2)^2);
 end
