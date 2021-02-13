@@ -17,6 +17,14 @@
 
 %% Parameters
 clear all; % for debug purposes, can be removed later
+
+%% Load identification results
+try
+    load('../identification/identification.mat');
+catch
+    assert(false, "File 'identification.mat' does not exist. Run identification first.");
+end
+
 % Pool model parameters
 tau = [0.16, 0.1]; % minutes % NEEDS TO BE UPDATED, VALUES ARE GUESSED ON INSTINCT
 alpha = [0.1853, 0.1187]; % m^2 actual lab setup values
@@ -146,10 +154,13 @@ for i=1:N
     Dyui = [0];
 
     % Construct NiX and NiY
-    CCD = [Ctzi, Cszi, Dzni];
+%     CCD = [Ctzi, Cszi, Dzni]; % <-- 23-07-2020: this is not what the paper has
+    CCD2 = [Ctyi, Csyi, Dyni]; % <-- 23-07-2020: This is what the paper has
     BBD = [Btui', Bsui', Dzui'];
 
-    NiX = null(CCD);
+%     NiX = null(CCD); % <--- 23-07-2020 Changed this to use CCD2, result
+%     is the same matrix NiX.
+    NiX = null(CCD2);
     NiY = null(BBD);
 
     % Construct \Pi_i^X
@@ -313,7 +324,7 @@ cvx_begin sdp  % semi-definite programming
 cvx_end 
 
 %% Stop if cvx has failed
-if cvx_status ~= 'Solved'
+if strcmp(cvx_status, 'Failed')
     disp('CVX is not able to solve the problem for this value of gamma.');
     return;
 end
