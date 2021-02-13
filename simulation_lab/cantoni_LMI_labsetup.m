@@ -43,7 +43,9 @@ for i=1:length(phi_wave)
 end
 
 %% Loop shaping weights parameters from [1] % NEED CHANGES FOR THE LAB SETUP
-kappa = [0.002, 0.003]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+%kappa = [0.002, 0.003]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+% BB: just a random change to find values that work => TODO: look at this later!
+kappa = [0.02, 0.03]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
 phi = [45, 40]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
 rho = [1, 1]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
 % eta = [130, 223]; % Used for plot scaling in the same way as done in [1]
