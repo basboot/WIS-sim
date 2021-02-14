@@ -71,6 +71,7 @@ for iPool = 1:3
     PoolModel(iPool).experiment = ze;
     PoolModel(iPool).validation = zv;
     PoolModel(iPool).tf = mtf;
+    PoolModel(iPool).tau = Wis.delays(iPool);
 
 end
 
