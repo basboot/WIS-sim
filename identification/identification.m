@@ -101,3 +101,9 @@ for iPool = 1:3
     % Literature survey Jacob sec. 3-3-1.
     PoolModel(iPool).phi_wave = omega_n(2) * sqrt(1-zeta(2)^2);
 end
+
+%% Add alpha from WIS properties to the pools
+ PoolModel(1).alpha = Wis.area1;
+ PoolModel(2).alpha = Wis.area2;
+ PoolModel(3).alpha = Wis.area3;
+ 
