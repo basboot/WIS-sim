@@ -14,7 +14,7 @@ nPool = 3; % The number of pools.
 %% Loop shaping weights parameters from [1] % NEED CHANGES FOR THE LAB SETUP
 %kappa = [0.002, 0.003]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
 % BB: just a random changes to find values that work => TODO: look at this later!
-kappa = [0.02, 0.03, 0.04]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+kappa = [0.01, 0.03, 0.01]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
 phi = [45, 40, 35]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
 rho = [0.01, 0.01, 0.01]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
 % eta = [130, 223]; % Used for plot scaling in the same way as done in [1]
@@ -49,12 +49,20 @@ for i = 1:nPool
 
     % Tuning kappa
     % bw_gain should be less than 0.7079 at the 'freq', then the bandwidth is < 1/tau(i)
-    bw_gain(i) = evalfr(L{i}, freq(i)); % magnitude/Gain, used to check if the bandwidth is < 1/tau(i)
-    if bw_gain(i) >= 0.7079 % 0.7079 corresponds to -3 dB in magnitude
-        fprintf('The bandwidth of L%d is too large (bw_gain(1) is: %d. \n Retune kappa(1) before proceeding\n', i, bw_gain(i));
+    bw_gain_tau(i) = evalfr(L{i}, freq(i)); % magnitude/Gain, used to check if the bandwidth is < 1/tau(i)
+    if bw_gain_tau(i) >= 0.7079 % 0.7079 corresponds to -3 dB in magnitude
+        fprintf('The bandwidth of L%d is too large (bw_gain tau is: %d. \n Retune kappa before proceeding\n', i, bw_gain_tau(i));
         return;
     else
-        fprintf('The bandwidth of L%d is good (bw_gain(1) is %d \n', i, bw_gain(i));
+        fprintf('The bandwidth of L%d is good (bw_gain tau is %d \n', i, bw_gain_tau(i));
+    end
+    
+    bw_gain_phi(i) = evalfr(L{i}, phi_wave(i)/60); % magnitude/Gain, used to check if the bandwidth is < 1/tau(i)
+    if bw_gain_phi(i) >= 0.7079 % 0.7079 corresponds to -3 dB in magnitude
+        fprintf('The bandwidth of L%d is too large (bw_gain phi is: %d. \n Retune kappa(1) before proceeding\n', i, bw_gain_phi(i));
+        return;
+    else
+        fprintf('The bandwidth of L%d is good (bw_gain phi is %d \n', i, bw_gain_phi(i));
     end
 
     if tuning_process  == 1
@@ -63,8 +71,9 @@ for i = 1:nPool
         bode(L{i}); % bodeJL(W1,'Plantname');
         hold on; 
         bode(1/s*alpha(i)); 
-        xline(freq(i),'--r')
-        legend(sprintf('L%d', i),sprintf('1/s*alpha(%d)', i), 'max bw'); 
+        xline(freq(i),'--b')
+        xline(phi_wave(i)/60, '--r');
+        legend(sprintf('L%d', i),sprintf('1/s*alpha'), '1/\tau', '\phi_{wave}'); 
         grid on;
         
         P{i} = 1/(alpha(i)*s);
