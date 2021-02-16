@@ -10,59 +10,16 @@
 
 
 %% Parameters
-%clear all; % for debug purposes, can be removed later
-
-%% Load identification results
-try
-    load('../identification/identification.mat');
-catch
-    assert(false, "File 'identification.mat' does not exist. Run identification first.");
-end
-
-nPool = 3;
-
-% TODO: remove: data present in PoolModel (in secs and rad/sec!!!)
-% % Pool model parameters
-tau = [4, 2, 4, 4, 6]; % minutes
-alpha = [6492, 2478, 6084, 5658, 7650]; % m^2
-phi_wave = [0.48, 1.05, 0.48, 0.48, 0.42 ]; % rad/min (wave frequency)
-
-% CVX suddenly decided to not be able to find its own function 'vec', so:
-%addpath C:\Users\Jacob\Documents\MATLAB\CVX\cvx\functions\vec_
-addpath ../functions_jacob/
-
-% NOTE: The simulation was initially built for decentralized control using
-% values from Cantoni 2007: Control of large scalle irrigation systems.
-% That simulation still exists, but for distributed control I modified the
-% simulation
-% Values from Table 1 of the 2007 paper (for five pools):
-% tau = [8,3,16,16,16]; % minutes; delay
-% alpha = [22414, 11942, 43806, 43806, 43806]; % m^2
-% phi_wave = [0.42, 0.74, 0.20, 0.20, 0.20]; % rad/min, dominant wave frequencies
+clear all; % for debug purposes, can be removed later
 
 
-% TODO: remove, zeta and omega_n also in PoolModel
-% 3rd order model is used for simulation
-% w_n = [0.65, 0.86, 0.448, 0.448, 0.448]; Wrong: computed wrongly
-% We can just compute w_n now that we have a sound expression:
+%% load pool parameters from Cantoni (2008)
+%cantoni_2008_values;
 
-w_n = zeros(1,length(phi_wave));
-for i=1:length(phi_wave)
-    zeta(i) = 0.0151;  % no unit % From Gabriel's ini script
-    w_n(i) = phi_wave(i)/sqrt(1-zeta(i)^2); % Literature survey sec. 3-3-1.
-%     display(w_n(i));
-end
+%% load pool parameters for lab setup
+lab_setup_values;
 
-
-% TODO: tune parameters / use code from simulation_lab
-% Loop shaping weights parameters from [1]
-kappa = [1.69, 6.47, 2.37, 2.21, 1.68];
-phi = [113.64, 37.17, 86.96, 96.15, 113.64];
-rho = [9.97, 3.26, 7.60, 8.47, 9.97];
-eta = [130, 223, 183, 170, 153];
-
-% %% Define the matrices
-
+%% Define the matrices
 
 for i=1:nPool
     % Create the pool specific matrices for pool i
@@ -94,29 +51,17 @@ for i=1:nPool
             0, 0, 0];
     Dzu{i} = [0; 1];
     Dyn{i} = [1, 0, 0];
-    Dyu{i} = [0];
-
-    % Construct NXi 
-    % "NXi is a matrix with columns that span the null-space of Cty Csy
-    % Dyn"
-
-    CCD = [Cty{i}, Csy{i}, Dyn{i}]; 
-    NX{i} = null(CCD);
-    
-    % Construct NYi 
-    % "NYi with columns that span the null-space of (Btu)T (Bsu)T (Dzu)T"
-    BBD = [Btu{i}', Bsu{i}', Dzu{i}'];
-    NY{i} = null(BBD);
+    Dyu{i} = [0];    
 
     % Construct \Pi_Xi
     PiX_partial = [eye(4),      zeros(4,1),   zeros(4,3);
             Att{i},        Ats{i},         Btn{i};
             Ast{i},        Ass{i},         Bsn{i};
-            zeros(1,4),  1,            zeros(1,3);
+            zeros(1,4),     eye(1),            zeros(1,3);
             Ctz{i},        Csz{i},         Dzn{i};
-            zeros(3,4),  zeros(3,1),   eye(3)];
+            zeros(3,4),     zeros(3,1),   eye(3)];
         
-    PiX{i} = PiX_partial * NX{i};
+    
 
     % Construct \Pi_Yi
     PiY_partial = [Att{i}',       Ast{i}',        Ctz{i}';
@@ -125,9 +70,52 @@ for i=1:nPool
             Ats{i}',       Ass{i}',        Csz{i}';
             zeros(2,4),  zeros(2,1),   -eye(2);
             Btn{i}',       Bsn{i}',        Dzn{i}'];
-    PiY{i} = PiY_partial * NY{i};        
+      
+%     if i == 1
+%         Ast{1} = zeros(0,4); % Only for pool 1
+%         Ass{1} = zeros(0,1); % Only for pool 1
+%         Bsn{1} = zeros(0,3); % Only for pool 1
+%         Bsu{1} = zeros(0,1); % Only for pool 1  % Initial mistake? BB: added again
+% 
+%         % remove empty rows/colums
+%         PiX_partial(9, :) = [];
+%         PiY_partial(:, 5) = [];  
+%     end
+%     
+%     
+%     if i == nPool
+%         Ats{nPool} = zeros(4,0); % Only for pool N
+%         Ass{nPool} = zeros(1,0); % Only for pool N
+% %             Ass5 = []; % This is what we use later on to Create S5, so
+% %             maybe we should also implement this here?
+%         Csz{nPool} = zeros(2,0); % Only for pool N
+%         Csy{nPool} = zeros(0,1); % BB: added
+%         
+%         % remove empty rows/colums
+%         PiX_partial(:, 5) = [];
+%         PiY_partial(10, :) = [];  
+%     end
+    
+    % Construct NXi and NYi after emptying blocks
+    % Construct NYi 
+    % "NYi with columns that span the null-space of (Btu)T (Bsu)T (Dzu)T"
+    BBD = [Btu{i}', Bsu{i}', Dzu{i}'];
+    NY{i} = null(BBD);
+    
+    % Construct NXi 
+    % "NXi is a matrix with columns that span the null-space of Cty Csy
+    % Dyn"
 
-    % TODO: cleanup!
+    CCD = [Cty{i}, Csy{i}, Dyn{i}]; 
+    NX{i} = null(CCD);
+    
+    % Calvulate \Pi_Xi and \Pi_Yi
+    PiX{i} = PiX_partial * NX{i};    
+    PiY{i} = PiY_partial * NY{i}; 
+
+
+    % TODO: cleanup! and check! There is something strange in the paper
+    % here
     switch i
         case 1          % Pool 1 specific matrices
             % Modify N1Y to comply with the empty (5th) column of PiY1
@@ -191,7 +179,9 @@ end %for
 % gamma_sqr = 8.2944; % <= gamma = 2.88 is optimum from the paper
 % Smallest that can be solved: 
 % gamma_sqr = 16;
-gamma_sqr = 15.4;
+gamma_sqr = 15.4; % cantoni 5 pools
+gamma_sqr = 200; % jacob 2 pools
+gamma_sqr = 45; % lab setup
 disp(strcat('solving for \gamma = ', num2str(sqrt(gamma_sqr))));
 
 
@@ -267,7 +257,8 @@ cvx_begin sdp  % semi-definite programming
                 X_partial(10, :) = [];
                 Y_partial(:, 10) = [];
                 Y_partial(10, :) = [];
-            end         
+            end    
+            disp(i)
             PiX{i}' * X_partial * PiX{i} <= 0;
             PiY{i}' * Y_partial * PiY{i} >= 0;
          
@@ -285,8 +276,8 @@ smallestXtti = inf;
 smallestYtti = inf;
 
 for i = 1:nPool
-    smallestXtti = min(smallestXtti, eig(Xtt(:,:,1)));
-    smallestYtti = min(smallestYtti, eig(Ytt(:,:,1)));
+    smallestXtti = min(smallestXtti, min(eig(Xtt(:,:,i))));
+    smallestYtti = min(smallestYtti, min(eig(Ytt(:,:,i))));
 end
 display('The smallest Xtti eigenvalue is:' + " " + num2str(smallestXtti));
 display('The smallest Ytti eigenvalue is:' + " " + num2str(smallestYtti));
