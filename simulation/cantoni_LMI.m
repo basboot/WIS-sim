@@ -19,6 +19,7 @@ clear all; % for debug purposes, can be removed later
 %% load pool parameters for lab setup
 lab_setup_values;
 
+
 %% Define the matrices
 
 for i=1:nPool
@@ -179,8 +180,8 @@ end %for
 % gamma_sqr = 8.2944; % <= gamma = 2.88 is optimum from the paper
 % Smallest that can be solved: 
 % gamma_sqr = 16;
-gamma_sqr = 15.4; % cantoni 5 pools
-gamma_sqr = 200; % jacob 2 pools
+%gamma_sqr = 15.4; % cantoni 5 pools
+%gamma_sqr = 200; % jacob 2 pools
 gamma_sqr = 45; % lab setup
 disp(strcat('solving for \gamma = ', num2str(sqrt(gamma_sqr))));
 
@@ -327,10 +328,11 @@ for i = 1:nPool
 
 
     % Now construct discrete-time versions of the dynamic control matrices
-    h = 1; % Sampling time - STILL NEEDS TO BE PROPERLY SELECTED <------------
+    h = 1/60; % Sampling time - STILL NEEDS TO BE PROPERLY SELECTED <------------
     % I use the 'tustin' method for phase property preservation of the contr.
     [ssd{i}, ssd_map{i}] = c2d(SS{i}, h, 'tustin'); 
 
+    % TODO: BB: Check this. Tau is in minutes, but h in seconds.
     ddelay(i) = round(tau(i)/h); % Discrete delay
 
     % Continuous-time shaping weights
@@ -340,7 +342,12 @@ for i = 1:nPool
     Wd{i} = c2d(W{i},h,'tustin');
 
     % Define the continuous-time plant models (third order)
-    P{i} = tf([1],[alpha(i)/w_n(i)^2 2*alpha(i)*zeta(i)/w_n(i) alpha(i) 0 ]);
+    % TODO: BB: Check calculation of w_n from phi_wave (rad/min or
+    % rad/sec?)
+    %P{i} = tf([1],[alpha(i)/w_n(i)^2 2*alpha(i)*zeta(i)/w_n(i) alpha(i) 0 ]);
+ 
+    % first order
+    P{i} = tf([1],[alpha(i) 0 ]);
 
     % Discretize the plant models
     Pd{i} = c2d(P{i}, h, 'zoh');
@@ -645,6 +652,34 @@ disp('Workspace saved to file for use in simulation.');
 
 
 
+%% extra
+C_level = zeros(5,20);
+C_level(1,1) = 1;
+C_level(2,1+4) = 1;
+C_level(3,1+8) = 1;
+C_level(4,1+12) = 1;
+C_level(5,1+16) = 1;
+
+C_delta_i = zeros(5,20);
+C_delta_i(1,2) = 1;
+C_delta_i(2,2+4) = 1;
+C_delta_i(3,2+8) = 1;
+C_delta_i(4,2+12) = 1;
+C_delta_i(5,2+16) = 1;
+
+C_u = zeros(5,20);
+C_u(1,3) = 1;
+C_u(2,3+4) = 1;
+C_u(3,3+8) = 1;
+C_u(4,3+12) = 1;
+C_u(5,3+16) = 1;
+
+C_omega = zeros(5,20);
+C_omega(1,4) = 1;
+C_omega(2,4+4) = 1;
+C_omega(3,4+8) = 1;
+C_omega(4,4+12) = 1;
+C_omega(5,4+16) = 1;
 
 
 
