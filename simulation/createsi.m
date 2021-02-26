@@ -109,6 +109,7 @@ Uiort = null(Ui)'; % This should be it according to Gabriel
 
 % Watch out! I modified the following equation according to eq.17 of
 % Iwasaki's 1994 paper. The transposes are different than in Cantoni's.
+% TODO: BB: Why has this been changed? Was this a typo in Cantoni?
 mui = max(eig( Uiplus' * (Gi - Gi*Uiort' * inv(Uiort*Gi*Uiort') *Uiort*Gi) * Uiplus )); %lambda_max as max(eig())
 
 epsi_scaling = 0.1; % Seems like I have to choose it myself in the end, such epsi << 1/mui
