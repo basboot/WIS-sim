@@ -16,7 +16,7 @@
 
 
 %% Parameters
-clear all; % for debug purposes, can be removed later
+%clear all; % for debug purposes, can be removed later
 
 %% Load identification results
 try
@@ -25,40 +25,84 @@ catch
     assert(false, "File 'identification.mat' does not exist. Run identification first.");
 end
 
-% TODO: CHECK /seconds <=> /minutes
+% % TODO: CHECK /seconds <=> /minutes
+% 
+% % Pool model parameters
+% tau = [PoolModel(1).tau/60, PoolModel(2).tau/60, PoolModel(3).tau/60]; % minutes % NEEDS TO BE UPDATED, VALUES ARE GUESSED ON INSTINCT
+% alpha = [Wis.area1, Wis.area2, Wis.area3]; % m^2 actual lab setup values
+% phi_wave = [PoolModel(1).phi_wave*60, PoolModel(2).phi_wave*60, PoolModel(3).phi_wave*60]; % rad/min (wave frequency) % NEEDS TO BE UPDATED; NOT THE ACTUAL VALUES
+% 
+% % CVX suddenly decided to not be able to find its own function 'vec', so:
+% %addpath C:\Users\Jacob\Documents\MATLAB\CVX\cvx\functions\vec_
+% addpath ../functions_jacob/
+% 
+% % 3rd order model is used for simulation, which needs a frequency:
+% % We can just compute w_n now that we have a sound expression:
+% % zeta = 0.0151;  % no unit % From Gabriel's ini script
+% zeta = zeros(1,length(phi_wave));
+% w_n = zeros(1,length(phi_wave));
+% for i=1:length(phi_wave)
+% %     w_n(i) = phi_wave(i)/sqrt(1-zeta^2); % Literature survey sec. 3-3-1.
+% % %     display(w_n(i));
+% 
+%     zeta(i) = PoolModel(i).zeta;
+%     w_n(i) = PoolModel(i).omega_n;
+% end
+% 
+% 
+% 
+% %% Loop shaping weights parameters from [1] % NEED CHANGES FOR THE LAB SETUP
+% %kappa = [0.002, 0.003]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+% % BB: just a random change to find values that work => TODO: look at this later!
+% kappa = [0.02, 0.03, 0.04]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+% phi = [45, 40, 35]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
+% rho = [1, 1, 1]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
+% % eta = [130, 223]; % Used for plot scaling in the same way as done in [1]
+% 
 
-% Pool model parameters
-tau = [PoolModel(1).tau/60, PoolModel(2).tau/60, PoolModel(3).tau/60]; % minutes % NEEDS TO BE UPDATED, VALUES ARE GUESSED ON INSTINCT
-alpha = [Wis.area1, Wis.area2, Wis.area3]; % m^2 actual lab setup values
-phi_wave = [PoolModel(1).phi_wave*60, PoolModel(2).phi_wave*60, PoolModel(3).phi_wave*60]; % rad/min (wave frequency) % NEEDS TO BE UPDATED; NOT THE ACTUAL VALUES
+% lab values
 
-% CVX suddenly decided to not be able to find its own function 'vec', so:
-%addpath C:\Users\Jacob\Documents\MATLAB\CVX\cvx\functions\vec_
-addpath ../functions_jacob/
-
-% 3rd order model is used for simulation, which needs a frequency:
-% We can just compute w_n now that we have a sound expression:
-% zeta = 0.0151;  % no unit % From Gabriel's ini script
-zeta = zeros(1,length(phi_wave));
-w_n = zeros(1,length(phi_wave));
-for i=1:length(phi_wave)
-%     w_n(i) = phi_wave(i)/sqrt(1-zeta^2); % Literature survey sec. 3-3-1.
-% %     display(w_n(i));
-
-    zeta(i) = PoolModel(i).zeta;
-    w_n(i) = PoolModel(i).omega_n;
-end
-
+nPool = 3; % The number of pools. 
 
 
 %% Loop shaping weights parameters from [1] % NEED CHANGES FOR THE LAB SETUP
 %kappa = [0.002, 0.003]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
-% BB: just a random change to find values that work => TODO: look at this later!
-kappa = [0.02, 0.03, 0.04]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+% BB: just a random changes to find values that work => TODO: look at this later!
+kappa = [0.01, 0.03, 0.01]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
 phi = [45, 40, 35]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
-rho = [1, 1, 1]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
+rho = [0.01, 0.01, 0.01]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
 % eta = [130, 223]; % Used for plot scaling in the same way as done in [1]
 
+% % retune
+% kappa = [0.00018292, 0.00069301, 4.4902e-05]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+% phi = [1.6e+02, 53, 4.4e+02]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
+% rho = [0.32, 0.16, 0.42]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
+
+% % re retune (using loop shaping)
+% kappa = [0.010, 0.03, 0.01]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+% phi = [64, 60, 35]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
+% rho = [1, 0.5, 0.01]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
+
+
+tuning_process = 0; % Set to 1 when in the process of tuning for bode plots
+
+addpath ../functions_jacob/
+
+for i = 1:nPool
+
+    % Pool model parameters
+    tau(i) = PoolModel(i).tau/60; % minutes 
+    alpha(i) = PoolModel(i).alpha; % m^2 actual lab setup values
+    phi_wave(i) = PoolModel(i).phi_wave*60; % rad/min (wave frequency) 
+    zeta(i) = PoolModel(i).zeta;
+    w_n(i) = PoolModel(i).omega_n;
+    
+%     fprintf("calculated using seconds: zeta %d omega_n %d\n", zeta(i), w_n(i));
+%     zeta(i) = 0.0151;  % no unit % From Gabriel's ini script
+%     w_n(i) = phi_wave(i)/sqrt(1-zeta(i)^2); % Literature survey sec. 3-3-1.
+%     fprintf("calculated using minutes: zeta %d omega_n %d\n", zeta(i), w_n(i));
+
+end
 
 % Continuous-time shaping weight construction and tuning
 W1 = tf([kappa(1)*phi(1) kappa(1)], [rho(1) 1 0]); % shaping weight 1
@@ -398,8 +442,8 @@ if strcmp(cvx_status, 'Failed')
 end
 
 %% Check the by cvx computed values:
-display('The smallest Xtti eigenvalue is:' + " " + num2str(min([min(eig(Xtt1)), min(eig(Xtt2))])))
-display('The smallest Ytti eigenvalue is:' + " " + num2str(min([min(eig(Ytt1)), min(eig(Ytt2))])))
+display('The smallest Xtti eigenvalue is:' + " " + num2str(min([min(eig(Xtt1)), min(eig(Xtt2)), min(eig(Xtt2))])))
+display('The smallest Ytti eigenvalue is:' + " " + num2str(min([min(eig(Ytt1)), min(eig(Ytt2)), min(eig(Ytt3))])))
 
 
 %% Create the controllers
@@ -458,6 +502,113 @@ P3 = tf([1],[alpha(3)/w_n(3)^2 2*alpha(3)*zeta(3)/w_n(3) alpha(3) 0 ]);
 P1d = c2d(P1, h, 'zoh');
 P2d = c2d(P2, h, 'zoh');
 P3d = c2d(P3, h, 'zoh');
+
+
+%%%% try to create combined model %%%
+
+%% just for debugging new script %%
+
+% Now define the combined A,B,C,D plant-matrices
+Ap = zeros(4*nPool, 4*nPool);
+Bp = zeros(4*nPool, 1*nPool);
+Bw = zeros(4*nPool, 2*nPool);
+Cp = zeros(1*nPool, 4*nPool);
+
+% vars needed to run part of other script
+nPool = 3;
+Att{1} = Att1;
+Att{2} = Att2;
+Att{3} = Att3;
+Ats{1} = Ats1;
+Ats{2} = Ats2;
+Ats{3} = Ats3;
+Btu{1} = Btu1;
+Btu{2} = Btu2;
+Btu{3} = Btu3;
+Btn{1} = Btn1;
+Btn{2} = Btn2;
+Btn{3} = Btn3;
+ssd{1} = ss1d;
+ssd{2} = ss2d;
+ssd{3} = ss3d;
+
+for i = 1:nPool
+    % Put pool behaviour in Ap
+    Ap(1 + (i-1) * 4:1 + (i-1) * 4 + 3, 1 + (i-1) * 4:1 + (i-1) * 4 + 3) = Att{i};
+    % Put outflow behaviour in Ap (for last pool outflow is added disturbance)
+    if i <  nPool
+        Ap(1 + (i-1) * 4:1 + (i-1) * 4 + 3, 1 + (i-1) * 4 + 6:1 + (i-1) * 4 + 6) = Ats{i};
+    end
+    
+% Ap = [Att1, zeros(4,2), Ats1, zeros(4,13);
+%       zeros(4,4), Att2, zeros(4,2), Ats2, zeros(4,9);
+%       zeros(4,8), Att3, zeros(4,2), Ats3, zeros(4,5);
+%       zeros(4,12), Att4, zeros(4,2), Ats4, zeros(4,1);
+%       zeros(4,16), Att5];
+    
+    % Put input / control in Bp
+    Bp(1 + (i-1) * 4:1 + (i-1) * 4 + 3, 1 + (i-1) * 1:1 + (i-1) * 1) = Btu{i};
+    
+%Bp = blkdiag(Btu1, Btu2, Btu3, Btu4, Btu5);
+
+    % Put input / disturbance in Bw
+    Bw(1 + (i-1) * 4:1 + (i-1) * 4 + 3, 1 + (i-1) * 2:1 + (i-1) * 2 + 1) = Btn{i}(:,2:3); 
+% Btnw1 = Btn1(:,2:3); 
+% Btnw2 = Btn2(:,2:3);
+% Btnw3 = Btn3(:,2:3);
+% Btnw4 = Btn4(:,2:3);
+% Btnw5 = Btn5(:,2:3);
+% Bw = blkdiag(Btnw1, Btnw2, Btnw3, Btnw4, Btnw5);
+
+    % Put output in Cp
+    Cp(1 + (i-1) * 1:1 + (i-1) * 1, 1 + (i-1) * 4:1 + (i-1) * 4 + 3) = [1 0 0 0];
+    
+% Cpi = [1 0 0 0];
+% Cp = blkdiag(Cpi, Cpi, Cpi, Cpi, Cpi);
+end
+
+
+% Define the controller by combining the individual controller matrices
+% I have the discrete time state-space description of the controller
+% Now extend it to have w_i^K as a state.
+% Create the submatrices I need, to redefine my states
+Ac = zeros(5 * nPool, 5 * nPool);
+Bc = zeros(5 * nPool, 1 * nPool);
+Cc = zeros(1 * nPool, 5 * nPool);
+Dc = zeros(1 * nPool, 1 * nPool);
+
+for i = 1:nPool   
+    [Aci{i}, Bci{i}, Cci{i}, Dci{i}] = create_combined_control_sub_matrices(ssd{i}, i, nPool);
+    % TODO: BB: check why this has to be inverted for the first pool
+    if i == 1
+        Bci{i} = -Bci{i};
+        Dci{i} = -Dci{i};
+    end
+    
+    Ac(1 + (i-1) * 5:1 + (i-1) * 5 + 4, :) = Aci{i};
+    Bc(1 + (i-1) * 5:1 + (i-1) * 5 + 4, i) = Bci{i};
+    Cc(i, :) = Cci{i}; % TODO: CHECK orientation 
+    Dc(i, i) = Dci{i};
+end
+
+% Ac = [Aci{1}; Aci{2}; Aci{3}; Aci{4}; Aci{5}]; % concatenating block rows
+% Bc = blkdiag(-Bci{1}, Bci{2}, Bci{3}, Bci{4}, Bci{5});
+% Cc = [Cci{1}; Cci{2}; Cci{3}; Cci{4}; Cci{5}]; % concatenating block rows
+% Dc = blkdiag(-Dci{1}, Dci{2}, Dci{3}, Dci{4}, Dci{5});
+
+nDc = size(Dc,1);
+D = [zeros(nDc), zeros(nDc); Dc, zeros(nDc)];
+nD = size(D,1); % D should be square (10x10), check eq. 43 of Heemels(2013)
+C = blkdiag(Cp,Cc);
+
+%% Create state-space models from the matrices for simulation checks
+% Create a simulation to check if the matrix operations are right
+% All discrete-time!
+Dp = zeros(size(Cp,1),size(Bp,2)); % Because we dont have a Dp
+comb_plant_cont = ss(Ap, Bp, Cp, Dp); % combined plant model cont.-time
+comb_plant_disc = c2d(comb_plant_cont,h,'zoh'); % combined plant model disc.-time
+comb_contr = ss(Ac, Bc, Cc, Dc, h); % combined controller model (discrete-time)
+
 
 
 %% Save the workspace for use in the simulation
