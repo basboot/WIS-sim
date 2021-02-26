@@ -11,6 +11,7 @@ end
 
 nPool = 3; % The number of pools. 
 
+
 %% Loop shaping weights parameters from [1] % NEED CHANGES FOR THE LAB SETUP
 %kappa = [0.002, 0.003]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
 % BB: just a random changes to find values that work => TODO: look at this later!
@@ -19,7 +20,23 @@ phi = [45, 40, 35]; % phi_i is used to introduce phase lead in the cross-over re
 rho = [0.01, 0.01, 0.01]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
 % eta = [130, 223]; % Used for plot scaling in the same way as done in [1]
 
-tuning_process = 1; % Set to 1 when in the process of tuning for bode plots
+% % retune
+% kappa = [0.00018292, 0.00069301, 4.4902e-05]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+% phi = [1.6e+02, 53, 4.4e+02]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
+% rho = [0.32, 0.16, 0.42]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
+
+% % re retune (using loop shaping)
+% kappa = [0.010, 0.03, 0.01]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+% phi = [64, 60, 35]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
+% rho = [1, 0.5, 0.01]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
+
+% % tune slower
+% kappa = [0.00001, 0.00001, 0.00001]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+% phi = [5000, 5000, 5000]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
+% rho = [50, 50, 50]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
+
+
+tuning_process = 0; % Set to 1 when in the process of tuning for bode plots
 
 addpath ../functions_jacob/
 
@@ -32,6 +49,10 @@ for i = 1:nPool
     zeta(i) = PoolModel(i).zeta;
     w_n(i) = PoolModel(i).omega_n;
     
+%     fprintf("calculated using seconds: zeta %d omega_n %d\n", zeta(i), w_n(i));
+%     zeta(i) = 0.0151;  % no unit % From Gabriel's ini script
+%     w_n(i) = phi_wave(i)/sqrt(1-zeta(i)^2); % Literature survey sec. 3-3-1.
+%     fprintf("calculated using minutes: zeta %d omega_n %d\n", zeta(i), w_n(i));
 
     W{i} = tf([kappa(i)*phi(i) kappa(i)], [rho(i) 1 0]); % shaping weight 
 
@@ -52,7 +73,7 @@ for i = 1:nPool
     bw_gain_tau(i) = evalfr(L{i}, freq(i)); % magnitude/Gain, used to check if the bandwidth is < 1/tau(i)
     if bw_gain_tau(i) >= 0.7079 % 0.7079 corresponds to -3 dB in magnitude
         fprintf('The bandwidth of L%d is too large (bw_gain tau is: %d. \n Retune kappa before proceeding\n', i, bw_gain_tau(i));
-        return;
+        %return;
     else
         fprintf('The bandwidth of L%d is good (bw_gain tau is %d \n', i, bw_gain_tau(i));
     end
@@ -60,7 +81,7 @@ for i = 1:nPool
     bw_gain_phi(i) = evalfr(L{i}, phi_wave(i)/60); % magnitude/Gain, used to check if the bandwidth is < 1/tau(i)
     if bw_gain_phi(i) >= 0.7079 % 0.7079 corresponds to -3 dB in magnitude
         fprintf('The bandwidth of L%d is too large (bw_gain phi is: %d. \n Retune kappa(1) before proceeding\n', i, bw_gain_phi(i));
-        return;
+        %return;
     else
         fprintf('The bandwidth of L%d is good (bw_gain phi is %d \n', i, bw_gain_phi(i));
     end
@@ -71,7 +92,7 @@ for i = 1:nPool
         bode(L{i}); % bodeJL(W1,'Plantname');
         hold on; 
         bode(1/s*alpha(i)); 
-        xline(freq(i),'--b')
+        xline(freq(i),'--b');
         xline(phi_wave(i)/60, '--r');
         legend(sprintf('L%d', i),sprintf('1/s*alpha'), '1/\tau', '\phi_{wave}'); 
         grid on;
