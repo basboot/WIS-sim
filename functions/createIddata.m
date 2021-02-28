@@ -51,8 +51,7 @@ output1 = output1 - output1(1);
 
 %% create iddata
 
-% input converted to l/sec for better scaling!
-ze = iddata(output1,input1*1000,dt1); 
+ze = iddata(output1,input1,dt1); 
 if showPlot
     figure(4)
     plot(ze)
@@ -81,7 +80,7 @@ delayest(ze)
 ze.ExperimentName = sprintf("%s-%s", ExperimentData.description, ExperimentData.type);
 ze.Name = sprintf("%s-%s", ExperimentData.filename, ExperimentData.type);
 ze.InputName = "flow";
-ze.InputUnit = "l/s";
+ze.InputUnit = "m^3/sec";
 ze.OutputName = "water level";
 ze.OutputUnit = "m";
 
