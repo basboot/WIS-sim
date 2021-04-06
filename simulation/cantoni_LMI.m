@@ -182,7 +182,7 @@ end %for
 % gamma_sqr = 16;
 %gamma_sqr = 15.4; % cantoni 5 pools
 %gamma_sqr = 200; % jacob 2 pools
-gamma_sqr = 45; % lab setup
+gamma_sqr = 500; % lab setup
 disp(strcat('solving for \gamma = ', num2str(sqrt(gamma_sqr))));
 
 
@@ -334,7 +334,7 @@ for i = 1:nPool
 
     % TODO: BB: Check this. Tau is in minutes, but h in seconds.
     ddelay(i) = round(tau(i)/h); % Discrete delay
-
+    
     % Continuous-time shaping weights
     W{i} = tf([kappa(i)*phi(i) kappa(i)], [rho(i) 1 0]);
 
@@ -353,6 +353,10 @@ for i = 1:nPool
     Pd{i} = c2d(P{i}, h, 'zoh');
 
 end
+
+%% pool 0 %%
+P0 = tf([1],[Wis.area0 0 ]);
+Pd0 = c2d(P0, h, 'zoh');
 
 %% Save the workspace for use in the simulation (moved to later on)
 % This way, we don't use this script as initialization script, but instead
