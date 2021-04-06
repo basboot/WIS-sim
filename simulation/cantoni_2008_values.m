@@ -40,7 +40,67 @@ end
 kappa = [1.69, 6.47, 2.37, 2.21, 1.68, 1.69];
 phi = [113.64, 37.17, 86.96, 96.15, 113.64, 113.64];
 rho = [9.97, 3.26, 7.60, 8.47, 9.97, 9.97];
-% BBB: eta is only used for scaling of the plots
+% BB: eta is only used for scaling of the plots
 eta = [130, 223, 183, 170, 153, 130]; 
 
 % %% Define the matrices
+
+%% check Cantoni bode plots
+tuning_process = 1;
+
+for i = 1:1
+
+    W{i} = tf([kappa(i)*phi(i) kappa(i)], [rho(i) 1 0]); % shaping weight 
+
+    % Shaping weight tuning based using the procedure described in [1]
+    % tuning rules related to kappa(1)
+
+    s = tf('s');
+    L{i} = W{i}*(1/s*alpha(i)); % local loop-gain for W1
+    freq(i) = (2*pi)/(tau(i)); % 1/tau(1) in rad/min
+
+
+    % Tuning phi and rho:
+    disp('phi is tuned to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness');
+    disp('rho is tuned to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency');
+
+    % Tuning kappa
+    % bw_gain should be less than 0.7079 at the 'freq', then the bandwidth is < 1/tau(i)
+    bw_gain_tau(i) = evalfr(L{i}, freq(i)); % magnitude/Gain, used to check if the bandwidth is < 1/tau(i)
+    if bw_gain_tau(i) >= 0.7079 % 0.7079 corresponds to -3 dB in magnitude
+        fprintf('The bandwidth of L%d is too large (bw_gain tau is: %d. \n Retune kappa before proceeding\n', i, bw_gain_tau(i));
+        %return;
+    else
+        fprintf('The bandwidth of L%d is good (bw_gain tau is %d \n', i, bw_gain_tau(i));
+    end
+    
+    bw_gain_phi(i) = evalfr(L{i}, phi_wave(i)); % magnitude/Gain, used to check if the bandwidth is < 1/tau(i)
+    if bw_gain_phi(i) >= 0.7079 % 0.7079 corresponds to -3 dB in magnitude
+        fprintf('The bandwidth of L%d is too large (bw_gain phi is: %d. \n Retune kappa(1) before proceeding\n', i, bw_gain_phi(i));
+        %return;
+    else
+        fprintf('The bandwidth of L%d is good (bw_gain phi is %d \n', i, bw_gain_phi(i));
+    end
+
+    if tuning_process  == 1
+        % Make bode plots for L1 and L2
+        figure(); 
+        bode(L{i}); % bodeJL(W1,'Plantname');
+        hold on; 
+        bode(1/s*alpha(i)); 
+        xline(freq(i),'--b');
+        xline(phi_wave(i), '--r');
+        legend(sprintf('L%d', i),sprintf('1/s*alpha'), '1/\tau', '\phi_{wave}'); 
+        grid on;
+        
+        P{i} = 1/(alpha(i)*s);
+        CLW{i} = feedback(P{i}*W{i},1);
+
+        figure(); 
+        step(CLW{i})
+        title(sprintf('CLW %d', i)); 
+        fprintf('Poles %d', i);
+        pole(CLW{i})
+
+    end % if in tuning process
+end
