@@ -33,11 +33,10 @@ Gate(3).k = zeros(1, size(Gate(3).setting, 2));
 
 for iGate = 1: 3
     for i = 1:size(Gate(iGate).setting, 2)
-        Gate(iGate).k(i) = calculateFlowConstant(Gate(iGate).data(i), iGate, Gate(iGate).setting(i), true, Gate(iGate).flow_to_use(i), false);
+        Gate(iGate).k(i) = calculateFlowConstant(Gate(iGate).data(i), iGate, Gate(iGate).setting(i), true, Gate(iGate).flow_to_use(i), true);
     end
     
 end
-
 
 %% Plot results
 figure();
@@ -63,5 +62,22 @@ ylabel("flow constant");
 Wis.a_gate = a_gate;
 Wis.b_gate = b_gate;
 
+%% Plot typical flows for linear approx
+
+gate_settings = [1, 5, 10, 25, 50, 100, 255];
+
+figure();
+for i = 1:size(gate_settings, 2)
+    k = i * Wis.a_gate + Wis.b_gate;
+    delta_height = 0:0.01:0.30;
+    flow = i * k * sqrt(delta_height);
+    plot(delta_height, flow);
+    hold on;
+end
+
+xlabel("h1-h2 (m)");
+ylabel("flow m^3/s");
+legend(string(gate_settings));
+title("estimated flow over a gate for different servo settings");
 
 
