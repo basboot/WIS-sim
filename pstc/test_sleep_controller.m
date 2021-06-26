@@ -1,5 +1,7 @@
 % Test sleep_controller.m
+warning ('on','all');
 
+%% init
 clear all;
 init_plant;
 init_etc;
@@ -13,10 +15,23 @@ kk = 1;
 klog = [];
 sleeplog = [];
 
+%% sim
+yref = [0.25; 0.20; 0.15; 0; 0; 0] * 1000;
+
+i_log = [];
+u_log = [];
 while kk <= TEND/h
     % Invoke controller
-    [u, dk, k, xc, xptilde, X, initialized, psibar] = sleepcontroller(...
-        yhat, triggered, ...
+    
+    % Controller
+    u = Cc*xc + Dc*yhat;
+    xc = Ac*xc + Bc*yhat;
+    
+    u_log = [u_log u];
+
+    % calculate sleep
+    [dk, k, xc, xptilde, X, initialized, psibar] = sleepcontroller(...
+        u, yhat, triggered, ...
         k, xc, xptilde, X, initialized, psibar, ...
         kfinal, kbar, TRIG_LEVEL, ...
         np, nc, pp, mp, nw, ppt, ...
@@ -24,13 +39,17 @@ while kk <= TEND/h
         Obsbar, Vbar, V, ...
         MM, Wk, QQ, Rw, Rv, wQw, cv, cvw);
     
+    
     if dk > 0  % There was a sleep command
         sleep = dk;
     end
     % Run plant forward
     [tt,xpode] = ode45(@(t,x) odeplant(t, x, u), h*(kk-1:kk), xp);
+
     xp = xpode(end,:)';
-    y = Cp*xp + noises(:, kk+1);
+    y = Cp*xp + noises(:, kk+1)*2;
+    
+    %initialized = false;
     
     % Trigger?  (I'm not using the sleep time here, but checking always)
     if initialized

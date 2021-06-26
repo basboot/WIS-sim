@@ -53,6 +53,7 @@ dist = 1 / Wis.area3; % m/min
 E = dist * [0; 0; 0; 0; 0; 0; 0; 0; 1; 0; 0; 0; 0]; 
 % This will be an extra, small fluctuation about the steady state
 % disturbance.
+Ap_no_disturbance = Ap;
 Ap(9,end) = dist;  % Now in the A matrix.
 
 % WIS controller (P control only)
@@ -61,7 +62,11 @@ Ac = zeros(0, 0);
 Bc = zeros(0, 3);
 Cc = zeros(3, 0);
 
-Dc = [-0.221876653844041 0 0;0 -0.311800712632069 0;0 0 -0.569668315662366];
+%Dc = [-0.221876653844041 0 0;0 -0.311800712632069 0;0 0 -0.569668315662366];
+
+% updated version
+Dc = [-7.905102e-02 0 0;0 -1.399181e-01 0;0 0 -4.021621e-01];
+
 Bc = zeros(0, 6);
 Dc = [Dc, zeros(3)];
 
@@ -86,9 +91,13 @@ ppt = 3;  % For WIS: number of outputs to use in triggering
 
 
 %% Assumption 4: Bound on disturbance
-W_MAG = 0.015;
+% negative disturbance => outflow
+W_MAG = -0.015*2;
+% TODO: ask Gabriel what this does... 
 W_MAG = W_MAG*1000;  % Units to mm and the like
-W_MAG = W_MAG/100;  % 1% fluctuation about real deal.
+
+% only 'fluctuation'
+%W_MAG = W_MAG/100;  % 1% fluctuation about real deal.
 
 % Bound on noise
 if exist('V_GLOBAL','var')
