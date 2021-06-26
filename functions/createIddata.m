@@ -12,12 +12,13 @@ pool = ExperimentData.pool;
 
 %% show time plot of the experiment
 if showPlot
-    figure(1);
+    figure();
     title("Water levels");
     plot(ExperimentData.timing/1000, ExperimentData.water_levels);
     legend("s1", "s2", "s3", "s4", "s5", "s6", "s7")
     xlabel("time [s]");
     ylabel("water level [m]");
+    saveFigureEps("water_levels_identification");
 end
 
 %% show plot of the input
@@ -36,6 +37,10 @@ if useGateModel
         plot(f_est_exp)
     end
     input1 = f_est_exp;
+end
+
+if showPlot
+    saveFigureEps("flows_identification");
 end
 
 output1 = ExperimentData.water_levels(:, pool*2+1);
