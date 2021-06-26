@@ -182,7 +182,10 @@ end %for
 % gamma_sqr = 16;
 %gamma_sqr = 15.4; % cantoni 5 pools
 %gamma_sqr = 200; % jacob 2 pools
-gamma_sqr = 500; % lab setup
+gamma_sqr = 50; % lab setup valiud + exceed
+
+
+
 disp(strcat('solving for \gamma = ', num2str(sqrt(gamma_sqr))));
 
 
@@ -328,7 +331,7 @@ for i = 1:nPool
 
 
     % Now construct discrete-time versions of the dynamic control matrices
-    h = 1/60; % Sampling time - STILL NEEDS TO BE PROPERLY SELECTED <------------
+    h = 1/(60); % Sampling time - STILL NEEDS TO BE PROPERLY SELECTED <------------
     % I use the 'tustin' method for phase property preservation of the contr.
     [ssd{i}, ssd_map{i}] = c2d(SS{i}, h, 'tustin'); 
 

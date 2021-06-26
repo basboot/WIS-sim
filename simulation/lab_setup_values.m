@@ -11,53 +11,25 @@ end
 
 nPool = 3; % The number of pools. 
 
+tuning_process = 1; % Set to 1 when in the process of tuning for bode plots
+tuning_version = '1'; % used to generate different figure names for different setups
 
 %% Loop shaping weights parameters from [1] % NEED CHANGES FOR THE LAB SETUP
-%kappa = [0.002, 0.003]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
-% BB: just a random changes to find values that work => TODO: look at this later!
-kappa = [0.01, 0.03, 0.01]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
-phi = [45, 40, 35]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
-rho = [0.01, 0.01, 0.01]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
-% eta = [130, 223]; % Used for plot scaling in the same way as done in [1]
 
-% % retune
-% kappa = [0.00018292, 0.00069301, 4.4902e-05]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
-% phi = [1.6e+02, 53, 4.4e+02]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
-% rho = [0.32, 0.16, 0.42]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
 
-% % re retune (using loop shaping)
-% kappa = [0.010, 0.03, 0.01]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
-% phi = [64, 60, 35]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
-% rho = [1, 0.5, 0.01]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
+% With correct values
+tuning_version = 'valid';
+kappa = [0.010, 0.03, 0.01]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+phi = [64, 60, 35]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
+rho = [1, 0.5, 0.01]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
 
-% % tune slower
-% kappa = [0.00001, 0.00001, 0.00001]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
-% phi = [5000, 5000, 5000]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
-% rho = [50, 50, 50]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
-
-% BB: retune to make it slower
-% kappa = [0.01, 0.03, 0.01]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
-% phi = [45, 40, 35]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
-% rho = [0.01, 0.01, 0.01]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
-
-% % BB: retune more simular to cantoni, ignoring phi_wave
-% kappa = [0.2, 0.3, 0.2]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
-% phi = [10, 10, 10]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
-% rho = [0.1, 0.1, 0.1]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
-% 
-%2c
+%2
+% version used in HIL
+tuning_version = 'exceeds_phi_wave';
 kappa = [0.3, 0.5, 0.3]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
 phi = [10, 10, 10]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
 rho = [0.1, 0.1, 0.1]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
 
-
-% BB: retune using auti PI (rho added very small)
-% kappa = [0.65, 0.45, 0.85]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
-% phi = [0.75, 0.65, 0.65]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
-% rho = [0.0001, 0.0001, 0.0001]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
-% 
-
-tuning_process = 0; % Set to 1 when in the process of tuning for bode plots
 
 addpath ../functions_jacob/
 
@@ -117,6 +89,7 @@ for i = 1:nPool
         xline(phi_wave(i)/60, '--r');
         legend(sprintf('L%d', i),sprintf('1/s*alpha'), '1/\tau', '\phi_{wave}'); 
         grid on;
+        saveFigureEps(sprintf('bode_weight_%d_version_%s',i,tuning_version));
         
         P{i} = 1/(alpha(i)*s);
         CLW{i} = feedback(P{i}*W{i},1);
@@ -126,6 +99,48 @@ for i = 1:nPool
         title(sprintf('CLW %d', i)); 
         fprintf('Poles %d', i);
         pole(CLW{i})
+        
 
     end % if in tuning process
 end
+
+
+%%%% CLEANUP
+
+%kappa = [0.002, 0.003]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+% BB: just a random changes to find values that work => TODO: look at this later!
+% kappa = [0.01, 0.03, 0.01]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+% phi = [45, 40, 35]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
+% rho = [0.01, 0.01, 0.01]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
+% eta = [130, 223]; % Used for plot scaling in the same way as done in [1]
+
+
+% % retune
+% kappa = [0.00018292, 0.00069301, 4.4902e-05]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+% phi = [1.6e+02, 53, 4.4e+02]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
+% rho = [0.32, 0.16, 0.42]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
+
+
+% % tune slower
+% kappa = [0.00001, 0.00001, 0.00001]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+% phi = [5000, 5000, 5000]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
+% rho = [50, 50, 50]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
+
+% BB: retune to make it slower
+% kappa = [0.01, 0.03, 0.01]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+% phi = [45, 40, 35]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
+% rho = [0.01, 0.01, 0.01]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
+
+% % BB: retune more simular to cantoni, ignoring phi_wave
+% version sent to Manuel and Gabriel
+% kappa = [0.2, 0.3, 0.2]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+% phi = [10, 10, 10]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
+% rho = [0.1, 0.1, 0.1]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
+
+
+% BB: retune using auti PI (rho added very small)
+% tuning_version = '3';
+% kappa = [0.65, 0.45, 0.85]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
+% phi = [0.75, 0.65, 0.65]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
+% rho = [0.0001, 0.0001, 0.0001]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
+% 
