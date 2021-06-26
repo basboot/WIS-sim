@@ -18,7 +18,13 @@ for iPool = 1:3
         if PoolData(i).pool == iPool
             if PoolData(i).type == "experiment"
                 if firstIddata
-                    ze = createIddata(PoolData(i), Wis, false, false);
+                    if (iPool == 3)
+                        % only plot first dataset of pool 3 for
+                        % illustration of the data in report
+                        ze = createIddata(PoolData(i), Wis, false, true);
+                    else
+                        ze = createIddata(PoolData(i), Wis, false, false);
+                    end
                     firstIddata = false;
                 else
                     ze = merge(ze, createIddata(PoolData(i), Wis, false, false));
@@ -63,14 +69,18 @@ for iPool = 1:3
     clear mtf;
 
     mtf = tfest(ze,init_sys,Opt);
-
+    
     %% validate
     figure();
-    compare(zv,mtf)
+    [y,fit,x0] = compare(zv,mtf);
+    compare(zv,mtf); % for plotting
+    
+    saveFigureEps(sprintf("validation_pool_%d", iPool));
     
     PoolModel(iPool).experiment = ze;
     PoolModel(iPool).validation = zv;
     PoolModel(iPool).tf = mtf;
+    PoolModel(iPool).validation_fit = fit;
     PoolModel(iPool).tau = Wis.delays(iPool);
 
 end
@@ -79,6 +89,8 @@ end
 figure();
 bode(PoolModel(1).tf, PoolModel(2).tf, PoolModel(3).tf)
 legend("pool1", "pool2", "pool3");
+
+saveFigureEps("dominant_wave_freq");
 
 % structure of the tf is a delayed second order system combined 
 % with an integrator

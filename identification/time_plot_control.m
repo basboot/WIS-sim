@@ -69,6 +69,8 @@ legend('global1', 'local1', 'global2', 'local2', 'global3', 'local3');
 title("Control signals");
 
 saveas(gcf,'../Latex/images/control', 'epsc')
+saveFigureEps("control");
+
 figure();
 
 plot(pool_data(:,1)/1000, pool_data(:,5));
