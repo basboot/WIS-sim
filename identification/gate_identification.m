@@ -52,11 +52,13 @@ coefficients = polyfit([Gate(1).setting Gate(2).setting Gate(3).setting],...
 a_gate = coefficients (1);
 b_gate = coefficients (2);
 
-plot([0 255], [0 255] .* a_gate + b_gate);
+%plot([0 255], [0 255] .* a_gate + b_gate);
 
-legend("gate1", "gate2", "gate3", "linear approximation");
+legend("gate1", "gate2", "gate3"); %, "linear approximation");
 xlabel("servo setting");
-ylabel("flow constant");
+ylabel("\gamma_i");
+
+saveFigureEps(sprintf("gates_gamma"));
 
 % store results in wis data
 Wis.a_gate = a_gate;
@@ -78,6 +80,9 @@ end
 xlabel("h1-h2 (m)");
 ylabel("flow m^3/s");
 legend(string(gate_settings));
+
+saveFigureEps(sprintf("estimated_possible_flows"));
+
 title("estimated flow over a gate for different servo settings");
 
 

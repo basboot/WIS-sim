@@ -2,15 +2,10 @@
 
 % Show a graph to visualy check the control
 
-
-% csvFile = "20210309_control_test_controller2_no_anti_windup.csv";
-%% csvFile = "20210316_control_test_constant_flow5e-4.csv";
-%csvFile = "20210316_control_test_controller2_no_anti_windup_min_to_sec";
- csvFile = "20210316_test_control_again";
-%
-%csvFile = "20210323_controller2c_offtakes_after_target";
-csvFile = "20210323_controller2c";
-
+%csvFile = "20210709_controller_exceed_offtake_small";
+%csvFile = "20210709_controller_exceed_offtake_medium";
+%csvFile = "20210709_controller_exceed_offtake_large";
+csvFile = "20210709_controller_valid_offtake_medium";
 
 % load data
 pool_data = readmatrix(sprintf("../data/%s", csvFile));
@@ -21,7 +16,7 @@ plot(pool_data(:,1)/1000, pool_data(:,3)/1000);
 hold on;
 title("Water level pool0");
 
-saveas(gcf,'../Latex/images/pool0', 'epsc')
+saveFigureEps(sprintf("exp_real_pool_0_%s", csvFile));
 
 
 figure();
@@ -40,9 +35,12 @@ legend('pool1', 'pool2', 'pool3');
 yline(0.25,'-','reference 1', 'LabelHorizontalAlignment', 'left', 'HandleVisibility','off');
 yline(0.20,'-','reference 2', 'LabelHorizontalAlignment', 'left', 'HandleVisibility','off');
 yline(0.15,'-','reference 3', 'LabelHorizontalAlignment', 'left', 'HandleVisibility','off');
+
+saveFigureEps(sprintf("exp_real_water_levels_%s", csvFile));
+
 title("Water levels");
 
-saveas(gcf,'../Latex/images/pool123', 'epsc')
+%saveas(gcf,'../Latex/images/pool123', 'epsc')
 
 figure();
 
@@ -66,11 +64,10 @@ hold on;
 xlabel('time (s)')
 ylabel('signal (x 10^{-4})')
 legend('global1', 'local1', 'global2', 'local2', 'global3', 'local3');
+
+%saveas(gcf,'../Latex/images/control', 'epsc')
+saveFigureEps(sprintf("exp_real_control_signals_%s", csvFile));
 title("Control signals");
-
-saveas(gcf,'../Latex/images/control', 'epsc')
-saveFigureEps("control");
-
 figure();
 
 plot(pool_data(:,1)/1000, pool_data(:,5));
@@ -85,6 +82,8 @@ hold on;
 xlabel('time (s)')
 ylabel('servo')
 legend('gate1', 'gate2', 'gate3');
+
+saveFigureEps(sprintf("exp_real_gates_%s", csvFile));
 
 title("Gates");
 saveas(gcf,'../Latex/images/gates', 'epsc')
