@@ -1,42 +1,64 @@
-%% NOT FINSHED, AND NOT USED, YET
-
 %% Frequency analysis of the pools
+
+% show comparison of filtered and unfiltered data on the fireflies
+% show FFT of unfiltered data
 
 
 %% Load experiment data
-gate3 = ...
-    wis_data("20210202_step_gate3_4_s255_no_intake2.csv", wis);
+pool_data = readmatrix(sprintf("../data/%s", "20210709_filtering_off_on_offtake_on_off.csv"));
 
-% show time plot
-figure(1);
-plot(gate3.timing/1000, gate3.water_levels);
-title("Water levels");
-legend("s1", "s2", "s3", "s4", "s5", "s6", "s7")
+% extract and convert sensor data
+water_levels = pool_data(:, [3,4,9,10,15,16,21]) .* Wis.a + Wis.b; % cm
+water_levels_filtered = pool_data(:, [5,6,11,12,17,18,23]) .* Wis.a + Wis.b; % cm
+
+X = water_levels(:,1)';
+X_filtered = water_levels_filtered(:,1)';
+
+
+% extract timing
+timing = pool_data(:, 1)'; % ms 
+    
+%% show time plot
+% Plot unfiltered
+figure();
+plot(timing/1000, X);
+
 xlabel("time [s]");
 ylabel("water level [m]");
+ylim([0 25])
+saveFigureEps("sensor_data_unfiltered_s1");
+
+title("Unfiltered sensor data");
+
+% Plot filtered
+figure();
+plot(timing/1000, X_filtered);
+
+xlabel("time [s]");
+ylabel("water level [m]");
+ylim([0 25])
+saveFigureEps("sensor_data_filtered_s1");
+
+title("Unfiltered sensor data");
 
 
-Fs = 1/gate3.dt;        % Sampling frequency                    
-T = gate3.dt;       % Sampling period       
-L = size(gate3.water_levels,1);    % Length of signal
-t = (0:L-1)*T;        % Time vector
-X = gate3.water_levels(:, 7)';
+%% FFT
 
-figure(1);
-plot(1000*t(1:50),X(1:50))
-title('Signal')
-xlabel('t (milliseconds)')
-ylabel('X(t)')
+Fs = 128;        % Sampling frequency                    
+T = 1/128;       % Sampling period       
+L = size(X,2);    % Length of signal
+t = timing;        % Time vector
 
 Y = fft(X);
-
 P2 = abs(Y/L);
 P1 = P2(1:L/2+1);
 P1(2:end-1) = 2*P1(2:end-1);
 
-figure(2);
+figure();
 f = Fs*(0:(L/2))/L;
 plot(f,P1) 
-title('Single-Sided Amplitude Spectrum of X(t)')
 xlabel('f (Hz)')
 ylabel('|P1(f)|')
+saveFigureEps("fft_s1");
+
+title('Single-Sided Amplitude Spectrum of X(t)')

@@ -17,6 +17,9 @@ calibration;
 %% visual validation of calibration
 time_plot;
 
+%% frequency analysis
+wis_fft;
+
 %% load data sets
 load_pool_data;
 %load_pool_data20210302;
