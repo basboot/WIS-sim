@@ -351,9 +351,13 @@ for i = 1:nPool
  
     % first order
     P{i} = tf([1],[alpha(i) 0 ]);
+    
+    % pade
+    Pade{i} = ss([-2/tau(i) 0; 0 0],[0; 4/tau(i)],[1 -1],0);
 
-    % Discretize the plant models
+    % Discretize the plant models and Pade approximation
     Pd{i} = c2d(P{i}, h, 'zoh');
+    Paded{i} = c2d(Pade{i}, h, 'zoh');
 
 end
 
