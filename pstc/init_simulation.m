@@ -16,7 +16,7 @@ kfinal = 30;  % \bar{\kappa} in the paper, heartbeat = 1/2 min
 % Disturbance signal
 %omega = @(t) W_MAG*((t >= 0) & (t <= TEND/2));  % Like in NecSys
 
-omega = @(t) 0.5*W_MAG*(t > 20);  % outtake after 20 secs
+omega = @(t) W_MAG*(t > 20);  % outtake after 20 secs
 
 odeplant = @(t,xp,u) Ap*xp + Bp*u + E*omega(t);
 

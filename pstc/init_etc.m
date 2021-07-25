@@ -1,7 +1,7 @@
 %% ETC / STC parameters
 
 % triggering function parameters
-TRIG_LEVEL = 2;
+TRIG_LEVEL = 1;
 sigma = 0.01; % 0.01
 kfinal = 30;  % Heartbeat
 

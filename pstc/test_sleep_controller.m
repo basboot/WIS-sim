@@ -20,6 +20,7 @@ yref = [0.25; 0.20; 0.15; 0; 0; 0] * 1000;
 
 i_log = [];
 u_log = [];
+t_log = [];
 while kk <= TEND/h
     % Invoke controller
     
@@ -28,6 +29,7 @@ while kk <= TEND/h
     xc = Ac*xc + Bc*yhat;
     
     u_log = [u_log u];
+    t_log = [t_log triggered];
 
     % calculate sleep
     [dk, k, xc, xptilde, X, initialized, psibar] = sleepcontroller(...
@@ -76,3 +78,5 @@ while kk <= TEND/h
     kk = kk + 1;    
     
 end
+
+plot(ylog(1:3,:)' + yref(1:3)')

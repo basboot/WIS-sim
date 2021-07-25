@@ -92,11 +92,10 @@ ppt = 3;  % For WIS: number of outputs to use in triggering
 
 %% Assumption 4: Bound on disturbance
 % negative disturbance => outflow
-W_MAG = -0.015*2;
-% TODO: ask Gabriel what this does... 
+W_MAG = -0.015;
 W_MAG = W_MAG*1000;  % Units to mm and the like
 
-% only 'fluctuation'
+% Keep W_MAG at 100% because now there is only 'fluctuation'
 %W_MAG = W_MAG/100;  % 1% fluctuation about real deal.
 
 % Bound on noise
