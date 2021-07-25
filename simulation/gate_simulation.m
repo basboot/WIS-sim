@@ -2,7 +2,8 @@ function [flow, next_gate] = gate_simulation(flow_request, h1, h2, current_gate)
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 
-max_step = 20000*255/(7*1); % rate limit based on sample time
+% disabled!
+max_step = 20000*255/(7*1); % rate limit based on sample time 
 
 % flow in m^3/sec
 
