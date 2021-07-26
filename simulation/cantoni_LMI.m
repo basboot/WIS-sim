@@ -487,6 +487,22 @@ comb_contr = ss(Ac, Bc, Cc, Dc, h); % combined controller model (discrete-time)
 
 % Simulation works!
 
+%% Experiment to use HIL with PSTC on combined model
+
+% Copy full system
+comb_plant_disc_p = comb_plant_disc;
+comb_plant_disc_w = comb_plant_disc;
+
+% Split compensator (u) and plant part (y delta, omega), by wiping the other states
+comb_plant_disc_p.A([3 7 11],:) = 0;
+comb_plant_disc_p.B([3 7 11],:) = 0;
+
+comb_plant_disc_w.A([1 2 4 5 6 8 9 10 12],:) = 0;
+comb_plant_disc_w.B([1 2 4 5 6 8 9 10 12],:) = 0;
+
+
+
+
 %% Check nominal stability using feedback and eigenvalues within unit circle
 % They are all inside the unit circle! => Nominal stability
 CPcomb = feedback(comb_plant_disc*comb_contr,eye(nPool),+1); % Combined system, pos. feedback
