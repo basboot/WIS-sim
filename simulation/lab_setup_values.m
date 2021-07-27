@@ -24,7 +24,7 @@ phi = [64, 60, 35]; % phi_i is used to introduce phase lead in the cross-over re
 rho = [1, 0.5, 0.01]; % rho_i is used to provide additional roll-off beyond the loop-gain bandwidth to ensure sufficiently low gain at the (un-modelled) dominant wave frequency
 
 %2
-% version used in HIL
+% % version used in HIL
 tuning_version = 'exceeds_phi_wave';
 kappa = [0.3, 0.5, 0.3]; % kappa_i is used to set the loop-gain bandwidth – this should also sit below (1/?i) rad/min, because of the delay which is not reflected in Li
 phi = [10, 10, 10]; % phi_i is used to introduce phase lead in the cross-over region to reduce the roll-off rate for stability and robustness
@@ -89,7 +89,7 @@ for i = 1:nPool
         xline(phi_wave(i)/60, '--r');
         legend(sprintf('L%d', i),sprintf('1/s*alpha'), '1/\tau', '\phi_{wave}'); 
         grid on;
-        saveFigureEps(sprintf('bode_weight_%d_version_%s',i,tuning_version));
+        saveFigureEps(sprintf('bode_weight_%d_version_%s',i,tuning_version), 22);
         
         P{i} = 1/(alpha(i)*s);
         CLW{i} = feedback(P{i}*W{i},1);

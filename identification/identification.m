@@ -89,6 +89,7 @@ end
 figure();
 bode(PoolModel(1).tf, PoolModel(2).tf, PoolModel(3).tf)
 legend("pool1", "pool2", "pool3");
+hold on;
 
 saveFigureEps("dominant_wave_freq");
 

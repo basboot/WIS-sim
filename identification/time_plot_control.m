@@ -2,10 +2,10 @@
 
 % Show a graph to visualy check the control
 
-%csvFile = "20210709_controller_exceed_offtake_small";
+csvFile = "20210709_controller_exceed_offtake_small";
 %csvFile = "20210709_controller_exceed_offtake_medium";
 %csvFile = "20210709_controller_exceed_offtake_large";
-csvFile = "20210709_controller_valid_offtake_medium";
+%csvFile = "20210709_controller_valid_offtake_medium";
 
 % load data
 pool_data = readmatrix(sprintf("../data/%s", csvFile));

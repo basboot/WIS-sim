@@ -21,22 +21,22 @@ timing = pool_data(:, 1)'; % ms
 %% show time plot
 % Plot unfiltered
 figure();
-plot(timing/1000, X);
+plot(timing/1000, X/100); % cm => m
 
-xlabel("time [s]");
-ylabel("water level [m]");
-ylim([0 25])
+xlabel('time (s)')
+ylabel('level (m)')
+ylim([0 0.25])
 saveFigureEps("sensor_data_unfiltered_s1");
 
 title("Unfiltered sensor data");
 
 % Plot filtered
 figure();
-plot(timing/1000, X_filtered);
+plot(timing/1000, X_filtered/100); % cm => m
 
-xlabel("time [s]");
-ylabel("water level [m]");
-ylim([0 25])
+xlabel('time (s)')
+ylabel('level (m)')
+ylim([0 0.25])
 saveFigureEps("sensor_data_filtered_s1");
 
 title("Unfiltered sensor data");
