@@ -2,18 +2,28 @@
 
 Matlab / Simulink files for identification and simulation of the WIS lab setup
 
-## identification
+## Identification
 
 Identification of the pools and gates of the lab setup
 
-## simulation
+## Simulation
 
-Simulation of the lab setup (based on the work of *Jacob Lont*)
+Controller creation based on the work of *Jacob Lont*
 
-## functions
+Full simulation
+
+HIL-simulation
+
+## Functions
 
 Common functions.
 
-## functions_jacob
+## Functions_jacob
 
 Common functions written by *Jacob Lont*.
+
+## PSTC
+
+PSTC scripts written by *Gabriel Glazier*.
+
+Communication scripts between PSTC and the Fireflies.
