@@ -2,6 +2,9 @@
 identification.mat
 distributed_workspace.mat
 
+# To remove obsolete files from repo without actually deleting
+removed
+
 # Exclude plots
 *.eps
 
