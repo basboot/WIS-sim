@@ -40,7 +40,7 @@ for iExperiments = 1: nExperiments
 
     experimentName = experiments{iExperiments}(1);
     
-    fileName = sprintf('hil_%s.mat', experimentName);
+    fileName = sprintf('mat/hil_%s.mat', experimentName);
 
     %% Load cached data
     try
@@ -103,7 +103,7 @@ for iExperiments = 1: nExperiments
 
     trigger_ratio = triggers / samples;
 
-    error = (level.Data - target);
+    error = (level.Data - target) * 1000; % mm
     error = error(1:SPS:end, :); % only keep error at sampling times
     mse = sum(sum((error .^2))) / (size(error, 1) );
 
@@ -113,14 +113,17 @@ for iExperiments = 1: nExperiments
     iate = 0;
 
     for t = 1:samples
-        ise = ise + sum(error(i,:) .^2);
-        iae = iae + sum(abs(error(i,:)));
-        itse = ise + sum(error(i,:) .^2) * t;
-        iate = iae + sum(abs(error(i,:))) * t;
+        ise = ise + sum(error(t,:) .^2);
+        iae = iae + sum(abs(error(t,:)));
+        itse = ise + sum(error(t,:) .^2) * t;
+        iate = iae + sum(abs(error(t,:))) * t;
     end
+    
+    mse = ise / samples;
+    mtse = itse / samples;
 
     %disp(experimentName);
-    disp(sprintf("%s & %s & %f & %f & %f & %f & %f & %f \\\\", experiments{iExperiments}(2), experiments{iExperiments}(3), total_on, trigger_ratio, ise, iae, itse, iate));
+    disp(sprintf("%s & %s & %.1f & %.2f & %.0f & %.0f  \\\\", experiments{iExperiments}(2), experiments{iExperiments}(3), total_on, trigger_ratio, mse, mtse));
 
 end
 

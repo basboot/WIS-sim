@@ -11,7 +11,7 @@ experimentName = "full_sim_with_gates_valid";
 %experimentName = "full_sim_exceed";
 %experimentName = "full_sim_with_gates_exceed";
 
-fileName = sprintf('sim_%s.mat', experimentName);
+fileName = sprintf('mat/sim_%s.mat', experimentName);
 
 %% Load cached, or save new data
 if useCachedData

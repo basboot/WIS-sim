@@ -27,10 +27,12 @@
 
 %experimentName = "continuous_disturbance_etc_0-1-1-flow";
 
-experimentName = "continuous_disturbance_etc_0-1-1";
+%experimentName = "continuous_disturbance_etc_0-1-1";
 
+% NEW: Pade for PSTC
+experimentName = "continuous_disturbance_etc_0-0025-0-01-pade";
 
-fileName = sprintf('hil_%s.mat', experimentName);
+fileName = sprintf('mat/hil_%s.mat', experimentName);
 
 save(fileName,'flow','level','servo','epoch',...
         'radio_on', 'SPS');    
