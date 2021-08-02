@@ -27,7 +27,7 @@ Prints c code with local compensator parameters.
 
 * expand_matrix_multiplication_c.m
 
-Expands a matrix multiplication as c code. Used to create code for the gloval controller.
+Expands a matrix multiplication as c code. Used to create code for the global controller.
 ```
 expand_matrix_multiplication_c(comb_contr.D, "uc", "cont_ctrl_array", 0)
 ```
