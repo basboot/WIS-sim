@@ -14,8 +14,6 @@
 %   - use only part where gate is fully open
 % Plot results
 
-% TODO: automate data selection
-
 Gate(1).data = [PoolData(1), PoolData(2), PoolData(3)];
 Gate(1).setting = [25, 100, 255];
 Gate(1).flow_to_use = [2, 3, 3];

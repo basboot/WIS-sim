@@ -1,3 +1,7 @@
+%% sensor_parameters_c.m
+
+% print c code for sensor calibration
+
 fprintf("// START - Calibration values calculated in MATLAB\n")
 
 fprintf("static double sensor1_offsets[NUM_PRIMARY_SENSORS] = {%d, %d, %d, %d};\n", ...

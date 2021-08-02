@@ -2,9 +2,7 @@
 
 % Show a graph to visualy check the control
 
-csvFile = "20210709_controller_exceed_offtake_small";
-%csvFile = "20210709_controller_exceed_offtake_medium";
-%csvFile = "20210709_controller_exceed_offtake_large";
+csvFile = "20210709_controller_exceed_offtake_medium";
 %csvFile = "20210709_controller_valid_offtake_medium";
 
 % load data
@@ -40,8 +38,6 @@ saveFigureEps(sprintf("exp_real_water_levels_%s", csvFile));
 
 title("Water levels");
 
-%saveas(gcf,'../Latex/images/pool123', 'epsc')
-
 figure();
 
 plot(pool_data(:,1)/1000, pool_data(:,6));
@@ -65,7 +61,6 @@ xlabel('time (s)')
 ylabel('signal (x 10^{-4})')
 legend('global1', 'local1', 'global2', 'local2', 'global3', 'local3');
 
-%saveas(gcf,'../Latex/images/control', 'epsc')
 saveFigureEps(sprintf("exp_real_control_signals_%s", csvFile));
 title("Control signals");
 figure();

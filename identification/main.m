@@ -34,3 +34,6 @@ identification;
 %% save results for later use
 save("identification.mat", 'Wis', 'PoolModel')
 
+%% print c code for sensor calibration
+sensor_parameters_c
+
