@@ -1,0 +1,14 @@
+# Simulation
+
+## Controller
+Controller creation based on the work of *Jacob Lont*
+* Run cantoni_LMI.m to create controller
+* Shape local compensators in lab_setup_values.m
+ 
+## Full simulation
+* simulate_3pools.slx
+Run cantoni_LMI.m first to create controller and models.
+Manual switches can be used to 
+
+
+## HIL-simulation
