@@ -8,13 +8,15 @@
 % Status: Controllers work, but the control may be improved based on 
 % comparison with a PI-controller from literature.
 
+% Adapted by Bas Boot:
+%   - number of pools variable
+%   - use TU Delft testbed values
+%   - create models for PSTC
+
 
 %% Parameters
 clear all; % for debug purposes, can be removed later
 
-
-%% load pool parameters from Cantoni (2008)
-%cantoni_2008_values;
 
 %% load pool parameters for lab setup
 lab_setup_values;
@@ -71,32 +73,7 @@ for i=1:nPool
             Ats{i}',       Ass{i}',        Csz{i}';
             zeros(2,4),  zeros(2,1),   -eye(2);
             Btn{i}',       Bsn{i}',        Dzn{i}'];
-      
-%     if i == 1
-%         Ast{1} = zeros(0,4); % Only for pool 1
-%         Ass{1} = zeros(0,1); % Only for pool 1
-%         Bsn{1} = zeros(0,3); % Only for pool 1
-%         Bsu{1} = zeros(0,1); % Only for pool 1  % Initial mistake? BB: added again
-% 
-%         % remove empty rows/colums
-%         PiX_partial(9, :) = [];
-%         PiY_partial(:, 5) = [];  
-%     end
-%     
-%     
-%     if i == nPool
-%         Ats{nPool} = zeros(4,0); % Only for pool N
-%         Ass{nPool} = zeros(1,0); % Only for pool N
-% %             Ass5 = []; % This is what we use later on to Create S5, so
-% %             maybe we should also implement this here?
-%         Csz{nPool} = zeros(2,0); % Only for pool N
-%         Csy{nPool} = zeros(0,1); % BB: added
-%         
-%         % remove empty rows/colums
-%         PiX_partial(:, 5) = [];
-%         PiY_partial(10, :) = [];  
-%     end
-    
+          
     % Construct NXi and NYi after emptying blocks
     % Construct NYi 
     % "NYi with columns that span the null-space of (Btu)T (Bsu)T (Dzu)T"
@@ -177,17 +154,10 @@ end %for
 
 %% Define the optimization problem for the string of pools
 
-% gamma_sqr = 8.2944; % <= gamma = 2.88 is optimum from the paper
-% Smallest that can be solved: 
-% gamma_sqr = 16;
-%gamma_sqr = 15.4; % cantoni 5 pools
-%gamma_sqr = 200; % jacob 2 pools
-gamma_sqr = 50; % lab setup valiud + exceed
-
+gamma_sqr = 50; % small enough to solve both valid + exceed controller
 
 
 disp(strcat('solving for \gamma = ', num2str(sqrt(gamma_sqr))));
-
 
 
 cvx_begin sdp  % semi-definite programming
@@ -199,7 +169,6 @@ cvx_begin sdp  % semi-definite programming
     variable X_minusone(1,1,nPool+1) symmetric; % symmetric, but not pos def
     variable Y_minusone(1,1,nPool+1) symmetric;
 
-    % BB: TODO: Why is gamma fixed?
 %     variable gamma_sqr nonnegative
     %
     minimize 0  
@@ -345,19 +314,13 @@ for i = 1:nPool
     Wd{i} = c2d(W{i},h,'tustin');
 
     % Define the continuous-time plant models (third order)
-    % TODO: BB: Check calculation of w_n from phi_wave (rad/min or
-    % rad/sec?)
     %P{i} = tf([1],[alpha(i)/w_n(i)^2 2*alpha(i)*zeta(i)/w_n(i) alpha(i) 0 ]);
  
     % first order
     P{i} = tf([1],[alpha(i) 0 ]);
     
-    % pade
-    Pade{i} = ss([-2/tau(i) 0; 0 0],[0; 4/tau(i)],[1 -1],0);
-
-    % Discretize the plant models and Pade approximation
+    % Discretize the plant models 
     Pd{i} = c2d(P{i}, h, 'zoh');
-    Paded{i} = c2d(Pade{i}, h, 'zoh');
 
 end
 
@@ -416,12 +379,6 @@ for i = 1:nPool
         Ap(1 + (i-1) * 4:1 + (i-1) * 4 + 3, 1 + (i-1) * 4 + 6:1 + (i-1) * 4 + 6) = Ats{i};
     end
     
-% Ap = [Att1, zeros(4,2), Ats1, zeros(4,13);
-%       zeros(4,4), Att2, zeros(4,2), Ats2, zeros(4,9);
-%       zeros(4,8), Att3, zeros(4,2), Ats3, zeros(4,5);
-%       zeros(4,12), Att4, zeros(4,2), Ats4, zeros(4,1);
-%       zeros(4,16), Att5];
-    
     % Put input / control in Bp
     Bp(1 + (i-1) * 4:1 + (i-1) * 4 + 3, 1 + (i-1) * 1:1 + (i-1) * 1) = Btu{i};
     
@@ -429,18 +386,10 @@ for i = 1:nPool
 
     % Put input / disturbance in Bw
     Bw(1 + (i-1) * 4:1 + (i-1) * 4 + 3, 1 + (i-1) * 2:1 + (i-1) * 2 + 1) = Btn{i}(:,2:3); 
-% Btnw1 = Btn1(:,2:3); 
-% Btnw2 = Btn2(:,2:3);
-% Btnw3 = Btn3(:,2:3);
-% Btnw4 = Btn4(:,2:3);
-% Btnw5 = Btn5(:,2:3);
-% Bw = blkdiag(Btnw1, Btnw2, Btnw3, Btnw4, Btnw5);
 
     % Put output in Cp
     Cp(1 + (i-1) * 1:1 + (i-1) * 1, 1 + (i-1) * 4:1 + (i-1) * 4 + 3) = [1 0 0 0];
     
-% Cpi = [1 0 0 0];
-% Cp = blkdiag(Cpi, Cpi, Cpi, Cpi, Cpi);
 end
 
 
@@ -463,14 +412,9 @@ for i = 1:nPool
     
     Ac(1 + (i-1) * 5:1 + (i-1) * 5 + 4, :) = Aci{i};
     Bc(1 + (i-1) * 5:1 + (i-1) * 5 + 4, i) = Bci{i};
-    Cc(i, :) = Cci{i}; % TODO: CHECK orientation 
+    Cc(i, :) = Cci{i}; 
     Dc(i, i) = Dci{i};
 end
-
-% Ac = [Aci{1}; Aci{2}; Aci{3}; Aci{4}; Aci{5}]; % concatenating block rows
-% Bc = blkdiag(-Bci{1}, Bci{2}, Bci{3}, Bci{4}, Bci{5});
-% Cc = [Cci{1}; Cci{2}; Cci{3}; Cci{4}; Cci{5}]; % concatenating block rows
-% Dc = blkdiag(-Dci{1}, Dci{2}, Dci{3}, Dci{4}, Dci{5});
 
 nDc = size(Dc,1);
 D = [zeros(nDc), zeros(nDc); Dc, zeros(nDc)];
@@ -486,22 +430,6 @@ comb_plant_disc = c2d(comb_plant_cont,h,'zoh'); % combined plant model disc.-tim
 comb_contr = ss(Ac, Bc, Cc, Dc, h); % combined controller model (discrete-time)
 
 % Simulation works!
-
-%% Experiment to use HIL with PSTC on combined model
-
-% Copy full system
-comb_plant_disc_p = comb_plant_disc;
-comb_plant_disc_w = comb_plant_disc;
-
-% Split compensator (u) and plant part (y delta, omega), by wiping the other states
-comb_plant_disc_p.A([3 7 11],:) = 0;
-comb_plant_disc_p.B([3 7 11],:) = 0;
-
-comb_plant_disc_w.A([1 2 4 5 6 8 9 10 12],:) = 0;
-comb_plant_disc_w.B([1 2 4 5 6 8 9 10 12],:) = 0;
-
-
-
 
 %% Check nominal stability using feedback and eigenvalues within unit circle
 % They are all inside the unit circle! => Nominal stability
@@ -707,6 +635,75 @@ C_omega(2,4+4) = 1;
 C_omega(3,4+8) = 1;
 C_omega(4,4+12) = 1;
 C_omega(5,4+16) = 1;
+
+
+%% Create models for use with PSTC
+
+%% Controller (global + local)
+
+% Create K_i from hat{K_i} i and W_i
+% Combine all K_i into one controller K
+
+% Because hat(K_i) is just a P-controller we can just 
+% aff it in the numerator of W_i
+
+KA = zeros(nPool * 2, nPool * 2);
+KB = zeros(nPool * 2, nPool);
+KC = zeros(nPool, nPool * 2);
+KD = zeros(nPool, nPool);
+
+for i = 1:nPool
+    tempKi =  comb_contr.D(i,i) * W{i};
+    [tempA, tempB, tempC, tempD] = tf2ss(tempKi.Numerator{1}, tempKi.Denominator{1});
+    KA(2*i-1:2*i, 2*i-1:2*i) = tempA;
+    KB(2*i-1:2*i, i) = tempB;
+    KC(i, 2*i-1:2*i) = tempC;
+    KD(i,i) = tempD;
+end
+
+% create continuous and discrete ss models
+comb_K_cont = ss(KA, KB, KC, KD);
+comb_K_disc = c2d(comb_K_cont,h,'tustin');
+
+%% Pools
+
+% init combined pool model with matrices of correct sizes
+PA = zeros(nPool * 2, nPool * 2);
+PB = zeros(nPool * 2, nPool);
+PC = zeros(nPool, nPool * 2);
+PD = zeros(nPool, nPool);
+
+for i = 1:nPool
+
+    % create first order ss model without delay
+    tempA = [0];
+    tempB = [1/alpha(i)];
+    tempC = [1];
+    tempD = [0];
+
+    tempPoolNoDelay = ss(tempA, tempB, tempC, tempD);
+
+    % add Pade approximation of delay for pool i
+    tempPool = pade(tempPoolNoDelay * exp(-s*tau(i)));
+    
+    % build combined ss
+    PA(2*i-1:2*i, 2*i-1:2*i) = tempPool.A;
+    PB(2*i-1:2*i, i) = tempPool.B;
+    PC(i, 2*i-1:2*i) = tempPool.C; % 1 0 1 0 1 0
+    PD(i,i) = tempPool.D; % is zero anyway
+end
+
+% connect pools 1->2, 2->3 
+% inflow pool 2,3 = outflow pool 1,2 without delay
+
+PB(1, 2) = -1/alpha(1); 
+PB(3, 3) = -1/alpha(2); 
+
+% create continuous and discrete ss models
+comb_Pool_cont = ss(PA, PB, PC, PD);
+comb_Pool_disc = c2d(comb_Pool_cont,h,'zoh');
+
+
 
 
 
