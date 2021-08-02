@@ -1,8 +1,16 @@
-function [flow, next_gate] = gate_simulation(flow_request, h1, h2, current_gate)
-%UNTITLED2 Summary of this function goes here
-%   Detailed explanation goes here
+% Used by simulation (simulate_3pools_slx) to calculate actual flow
+% over an undershot gate from a desired flow and the water levels
+% and rateb limit of the gate
 
-% disabled!
+function [flow, next_gate] = gate_simulation(flow_request, h1, h2, current_gate)
+% flow_request requested flow (m^3/s)
+% h1, h2 water level before and after gate (m)
+% current_gate setting (0-255)
+
+% flow actual flow (m^3/s)
+% next_gate (0-255)
+
+% Increased this to effectively disble the rate limit 
 max_step = 20000*255/(7*1); % rate limit based on sample time 
 
 % flow in m^3/sec
