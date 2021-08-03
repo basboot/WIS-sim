@@ -3,9 +3,14 @@ warning ('on','all');
 
 %% init
 clear all;
+disp("init plant");
 init_plant;
+%Copy_of_init_plant;
+disp("init etc");
 init_etc;
+disp("init pstc");
 init_pstc;
+disp("init sim");
 init_simulation;
 
 ylog = [];
@@ -22,6 +27,7 @@ i_log = [];
 u_log = [];
 t_log = [];
 while kk <= TEND/h
+    disp(kk)
     % Invoke controller
     
     % Controller

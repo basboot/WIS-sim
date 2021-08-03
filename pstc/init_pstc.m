@@ -114,7 +114,9 @@ dkmax = min(kend,KMAX);
 % Turn cell array into a 3-array
 nh = np+nc+pp;
 QQ = reshape(cell2mat(Qq),nh,nh,dkmax);
-MM = reshape(cell2mat(M),np,nh,dkmax);
+%MM = reshape(cell2mat(M),np,nh,dkmax);
+% TODO: check with Gabriel if this is correct
+MM = reshape(cell2mat(M),np+nc,nh,dkmax);
 %% Get auxiliary matrices and offline computable vectors
 % Eq. (21) in the paper
 
