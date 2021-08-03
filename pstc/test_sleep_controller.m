@@ -13,23 +13,28 @@ init_pstc;
 disp("init sim");
 init_simulation;
 
-ylog = [];
+y_log = [];
 % Main simulation loop
 kk = 1;
 
-klog = [];
+k_log = [];
 sleeplog = [];
+
+dk_log = [];
 
 %% sim
 yref = [0.25; 0.20; 0.15; 0; 0; 0] * 1000;
 
-i_log = [];
 u_log = [];
 t_log = [];
+
+prevKK = 0;
+
 while kk <= TEND/h
     %disp(kk)
 
     % calculate sleep (using old uhat)
+    
     [dk, k, xc, xptilde, X, initialized, psibar] = sleepcontroller(...
         yhat, triggered, uhat, ...
         k, xc, xptilde, X, initialized, psibar, ...
@@ -43,8 +48,25 @@ while kk <= TEND/h
     u = Cc*xc + Dc*yhat;
     xc = Ac*xc + Bc*yhat;
     
+    % Control is sent with limited precision from Firefly to HIL
+    scaledU = u ./ 1000; % CHECK!!!
+    for i = 1:3
+        if (scaledU(i) < -0.01) 
+            scaledU(i) = 0;
+        else
+            if (scaledU(i) > 0.05) 
+                scaledU(i) = 65535;
+            else 
+               scaledU(i) = round(((scaledU(i) + 0.01) * 1092250));
+            end
+        end
+
+        u(i) = ((scaledU(i) / 1092250) - 0.01) * 1000;
+    end
+    
     u_log = [u_log u];
     t_log = [t_log triggered];
+    dk_log = [dk_log dk];
     
     if dk > 0  % There was a sleep command
         sleep = dk;
@@ -52,13 +74,18 @@ while kk <= TEND/h
         if initialized
             xpw = xp;
             xpw(end) = omega(h*kk-1);
-            disp(h*kk); disp((xpw - xptilde)'*(X\(xpw - xptilde)))
+            %disp(h*kk); disp((xpw - xptilde)'*(X\(xpw - xptilde)))
         end
     end
     
     % Run plant forward
-    [tt,xpode] = ode45(@(t,x) odeplant(t, x, uhat), h*(kk-1:kk), xp);
-
+    
+    % create a timing problem of max +- 1/8 period
+    currKK = kk + (rand() - 0.5) * 0.25;
+    [tt,xpode] = ode45(@(t,x) odeplant(t, x, uhat), h*[prevKK currKK], xp);
+    
+    prevKK = currKK;
+    
     xp = xpode(end,:)';
     y = Cp*xp + noises(:, kk+1)*2;
     
@@ -87,7 +114,7 @@ while kk <= TEND/h
             triggered = true;
             yhat = y;
             
-            klog = [klog, k];
+            k_log = [k_log, k];
             sleeplog = [sleeplog, sleep];
         else
             triggered = false;
@@ -97,11 +124,11 @@ while kk <= TEND/h
         triggered = false;
     end
     
-    ylog = [ylog, y];
+    y_log = [y_log, y];
             
     % Iterate
     kk = kk + 1;    
     
 end
 
-plot(ylog(1:3,:)' + yref(1:3)')
+plot(y_log(1:3,:)' + yref(1:3)')
