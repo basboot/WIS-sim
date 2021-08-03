@@ -1,6 +1,6 @@
 function [dk, k, xc, xptilde, X, initialized, psibar] = ...
     sleepcontroller(...
-        u, y, triggered, ...  % Plant output and triggered flag
+        y, triggered, uhat, ...  % Plant output and triggered flag
         k, xc, xptilde, X, initialized, psibar, ...
         kfinal, kbar, TRIG_LEVEL, ...
         np, nc, pp, mp, nw, ppt, ...
@@ -43,6 +43,10 @@ function [dk, k, xc, xptilde, X, initialized, psibar] = ...
 % 
 %   Author: Gabriel de A. Gleizer, Jun 2021 (g.gleizer@tudelft.nl)
 
+
+% Controller
+u = Cc*xc + Dc*y;
+xc = Ac*xc + Bc*y;
 % FIXME: This will only work because this controller is stateless
 % Otherwise, we would need a uhat as well
 
@@ -84,11 +88,15 @@ if ~initialized
 elseif triggered   
     % Get transition matrix
     Mk = MM(:,:,k);  % Current triggering time is k
-    Wkk = Wk(:,:,k);
+    Wkk = Wk(:,:,k);     
     Mknn = Mk(1:np,1:np);  % the same as Phip(dk)
     
     % Algorithm 1, line 11
     % xptilde = Mkn*ptilde  % Already updated at previous iteration
+    % (instead, do everything here)
+    for ii = 1:k
+        xptilde = Phip*xptilde + Gammap*uhat;
+    end
     X = Mknn*X*Mknn';
     X = (X + X')/2;
     X = ell_regularize(X);
@@ -101,13 +109,20 @@ elseif triggered
         X = (1 + 1/pstar)*X + (1 + pstar)*Wkk;
     end
     X = (X+X')/2;
-    if any(eig(X) < 0)
-        error('Ihh');
-    end
     
     % Algorithm 1, line 2: fusion
     [xptilde,X] = ellobserverintersection(xptilde, y, X, V, Cp);
     X = (X+X')/2;
+    
+    if any(eig(X) < 0)
+        % This happens when the disturbance is bigger than we thought.
+        % In this case, reset to non-initialized and sleep = 0.
+        disp('Re-initializing')
+        dk = 1;
+        k = 0;
+        initialized = false;
+        return
+    end
     
     % PSTC triggering mechanism
     ptilde = [xptilde; xc; y];  % Algorithm 1, line 3
@@ -144,10 +159,11 @@ elseif triggered
 end
     
 if initialized
-    % Update state estimate for next step
-    xptilde = Phip*xptilde + Gammap*u;
     k = k + 1;
 end
+
+
+
 
 
 

@@ -27,19 +27,11 @@ i_log = [];
 u_log = [];
 t_log = [];
 while kk <= TEND/h
-    disp(kk)
-    % Invoke controller
-    
-    % Controller
-    u = Cc*xc + Dc*yhat;
-    xc = Ac*xc + Bc*yhat;
-    
-    u_log = [u_log u];
-    t_log = [t_log triggered];
+    %disp(kk)
 
-    % calculate sleep
+    % calculate sleep (using old uhat)
     [dk, k, xc, xptilde, X, initialized, psibar] = sleepcontroller(...
-        u, yhat, triggered, ...
+        yhat, triggered, uhat, ...
         k, xc, xptilde, X, initialized, psibar, ...
         kfinal, kbar, TRIG_LEVEL, ...
         np, nc, pp, mp, nw, ppt, ...
@@ -47,12 +39,25 @@ while kk <= TEND/h
         Obsbar, Vbar, V, ...
         MM, Wk, QQ, Rw, Rv, wQw, cv, cvw);
     
+    % Controller
+    u = Cc*xc + Dc*yhat;
+    xc = Ac*xc + Bc*yhat;
+    
+    u_log = [u_log u];
+    t_log = [t_log triggered];
     
     if dk > 0  % There was a sleep command
         sleep = dk;
+        uhat = u;
+        if initialized
+            xpw = xp;
+            xpw(end) = omega(h*kk-1);
+            disp(h*kk); disp((xpw - xptilde)'*(X\(xpw - xptilde)))
+        end
     end
+    
     % Run plant forward
-    [tt,xpode] = ode45(@(t,x) odeplant(t, x, u), h*(kk-1:kk), xp);
+    [tt,xpode] = ode45(@(t,x) odeplant(t, x, uhat), h*(kk-1:kk), xp);
 
     xp = xpode(end,:)';
     y = Cp*xp + noises(:, kk+1)*2;
@@ -64,8 +69,21 @@ while kk <= TEND/h
         yh = y(1:ppt);  % heights
         yhhat = yhat(1:ppt);
         eh = yh - yhhat;
+        % Use this to test prediction
+%         if sum(sum(eh.^2,2) - sigma^2*sum(yh.^2,2)) > TRIG_LEVEL ||...
+%                 k >= kfinal
+%             triggered = true;
+%             yhat = y;
+%             
+%             klog = [klog, k];
+%             sleeplog = [sleeplog, sleep];
+%         else
+%             triggered = false;
+%         end
+        
+        % Use this for the real deal
         if any(sum(eh.^2,2) - sigma^2*sum(yh.^2,2) > TRIG_LEVEL) ||...
-                k+1 >= kfinal
+                k >= kfinal
             triggered = true;
             yhat = y;
             
@@ -76,6 +94,7 @@ while kk <= TEND/h
         end
     else
         yhat = y;
+        triggered = false;
     end
     
     ylog = [ylog, y];

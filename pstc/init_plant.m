@@ -41,10 +41,14 @@ dist = 1 / Wis.area3; % m/min
 E = dist * [0; 0; 0; 0; 1; 0;   0]; 
 % This will be an extra, small fluctuation about the steady state
 % disturbance.
-Ap_no_disturbance = Ap;
+
+Ap_no_disturbance = Ap(1:end-1, 1:end-1);  % Remove the state
+Bp_no_disturbance = Bp(1:end-1, :);
+E_no_disturbance = E(1:end-1, :);
 
 % Gabriel: is this necessary? I don;t want initial disturbance
-Ap(7,end) = dist;  % Now in the A matrix.
+Ap(5,end) = dist;  % Now in the A matrix.
+% FIXED: must be the same as E (A(:,end) = E).
 
 % WIS controller (P control only)
 

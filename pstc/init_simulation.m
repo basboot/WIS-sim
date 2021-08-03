@@ -6,7 +6,7 @@ x0 = 0*ones(np,1);  % Assume it's in steady state for the first moment
 % x0(5) = 0.2 * 100;
 % x0(9) = 0.15 * 100;
 
-x0(end) = 0*100*W_MAG;  % This is the real disturbance
+%x0(end) = W_MAG;  % This is the real disturbance
 xc0 = zeros(nc,1);
 y0 = Cp*x0(1:np);
 
@@ -34,7 +34,7 @@ noises = 2*V_EACH_ELEMENT*(rand(pp,TEND/h + kfinal + 1) - 0.5);
 xp = x0;
 y = y0 + noises(:,1);
 yhat = y0;
-triggered = false;
+triggered = true;  % First sample always triggers
 
 k = 0;
 xc = xc0;
@@ -42,5 +42,7 @@ xptilde = zeros(np,1);
 X = zeros(np, np);
 initialized = false;
 psibar = zeros(pp*(kbar+1),1);
+u = Cc*xc + Dc*yhat;
+uhat = u;
 
 sleep = 0;

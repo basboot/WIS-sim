@@ -3,7 +3,8 @@ PIECEWISE_CONTINUOUS = true;
 
 %% Ellipsoidal reachability for computation of \mathcal{X}_w
 
-Wel = W_MAG*ell_unitball(nw);  % Ellipsoidal Toolbox command for a ball.
+fluctuation = 5/100;  % 1% about steady state disturbance
+Wel = W_MAG*fluctuation*ell_unitball(nw);  % Ellipsoidal Toolbox command for a ball.
 if PIECEWISE_CONTINUOUS
     [Ad1, Ed1] = c2d(Ap, E, h);
     sys = linsys(Ad1, Ed1, Wel, [], [], [], [], 'd');
@@ -11,7 +12,7 @@ else
     sys = linsys(Ap,E,Wel);  % Ellipsoidal Toolbox command
 end
 
-X0 = 1e-6*ell_unitball(np);  % Initial state set, should be the origin.
+X0 = 0.0001*ell_unitball(np);  % Initial state set, should be the origin.
 TINTV = [0,kfinal*h];  % Time interval to compute reachability
 L0 = eye(np);  % Support vectors for tight approximation
 
@@ -150,6 +151,11 @@ for kk = 1:kfinal
 end
 
 %% Initialization phase (Appendix C)
+
+% Change to include controller states
+Phifull = [Phip + Gammap*Dc*Cp, Gammap*Cc;
+           Bc*Cp,               Ac];
+Cfull = [Cp, zeros(pp,nc); zeros(nc, np), eye(nc)];
 
 % Initialize intersection of ellyptical cylinders
 % Determine kbar
