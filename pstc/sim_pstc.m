@@ -5,6 +5,8 @@ clear all; % TODO: only clear controller?
 init_plant;
 init_etc;
 init_pstc;
+
+
 init_simulation;
 
 
@@ -15,10 +17,11 @@ controller = FireflyCommunicationPSTC("/dev/cu.SLAB_USBtoUART10", ...
                 np, nc, pp, mp, nw, ppt, ...
                 Ac, Bc, Cc, Dc, Cp, Phip, Gammap, ...
                 Obsbar, Vbar, V, ...
-                MM, Wk, QQ, Rw, Rv, wQw, cv, cvw);
+                MM, Wk, QQ, Rw, Rv, wQw, cv, cvw, ...
+                h, xp);
             
             
-[ylog, ulog, klog] = controller.runSimulation(odeplant);
+controller.runSimulation(noises, TEND, yhat, triggered, uhat, odeplant, omega, sigma, Ap, Bp, Cp, Dp);
 
 %%
 %controller.deactivate();
