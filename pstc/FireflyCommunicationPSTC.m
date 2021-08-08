@@ -37,6 +37,7 @@ classdef FireflyCommunicationPSTC < handle
         radio_log = [];   
         
         end_epoch = -1;
+        error_log = [];
     end
     
     methods
@@ -107,7 +108,9 @@ classdef FireflyCommunicationPSTC < handle
         function activate(obj)
             %METHOD1 Summary of this method goes here
             %   Detailed explanation goes here
-            configureCallback(obj.device, "byte", 4*obj.n_values, @obj.callbackMessage);
+            %configureCallback(obj.device, "byte", 4*obj.n_values, @obj.callbackMessage);
+            configureCallback(obj.device,"terminator",@obj.callbackMessage)
+
         end
         
         function deactivate(obj)
@@ -123,106 +126,125 @@ classdef FireflyCommunicationPSTC < handle
             %         // send water levels (6, 7, 8, 9)
             %         // send water flows (10, 11, 12)
             %         // event (13)
-            data = read(device, obj.n_values, "double");
-            if obj.DEBUG
-                disp(data(1));
-            end
-            obj.log_data = [obj.log_data; data];
-           
-            % handle data and send extra sleeping
-            
-            % multiply values by 1000 for pstc scripts
-            
-            % level pool 1, 2, 3 and flow 1, 2, 3
-            yhat = [data(7); data(8); data(9)]; %data(10); data(11); data(12)];
-            yref = [0.25; 0.20; 0.15];% 0; 0; 0];
-            
-            yhat = yhat - yref;
-            yhat = yhat * 1000; % to mm
-            
-            % event detected?
-            triggered = data(13);
-            
-            %             % global control gate 1, 2, 3
-            %             u = [data(3); data(4); data(5)] * 1000;
-            
-            % local control flow 1, 2, 3
-            uhat = [data(10); data(11); data(12)] * 1000;
-            
-            % radio
-            radio_on = data(2);
-            epoch = data(1);
-            
-            if obj.end_epoch == -1
-                obj.end_epoch = epoch + 1800;
-            else
-                if epoch > obj.end_epoch
-                    obj.deactivate(); % stop after 1800 epochs (==30 mins with no extra sleep)
-                end
-            end
-            
-            replay = [uhat; yhat; triggered];
-            obj.replay_data = [obj.replay_data replay];
-            
-            
-            
-            % we now have uhat and yhat (==y if there is a trigger)
-            
-            % calculate sleep (using old uhat)
-            
-            dk = obj.sleepcontroller(yhat, triggered, uhat);
-            
-            obj.u_log = [obj.u_log uhat];
-            obj.t_log = [obj.t_log triggered];
-            obj.dk_log = [obj.dk_log dk];
-            obj.initialized_log = [obj.initialized_log obj.initialized];
-            obj.y_log = [obj.y_log yhat];
-            
-            obj.epoch_log = [obj.epoch_log epoch];
-            obj.radio_log = [obj.radio_log radio_on];
-            
-            % Controller
-            obj.xc = obj.Ac*obj.xc + obj.Bc*yhat;
-            
-            
-            if dk > 0  % There is a sleep command, so there was a trigger
-                sleep = dk;
+%             data = read(device, obj.n_values, "double");
+%             if obj.DEBUG
+%                 disp(data(1));
+%             end
 
-                % update for trivial sleep already done, and sending is not
-                % necessary
+            serial_data = readline(device);
+            disp(serial_data)
+            
+            data = split(serial_data, ",");
+            
+            %assert(size(command,1) == 4, "Received garbled data.");
+            if size(data,1) == obj.n_values
+                % only handle correctly received data
                 
-                if sleep > 2
-                    
-                    % notify network controller about extra sleep
-                    msg = sprintf("0 %s", string(dk-1));
-                    obj.sendMessage(msg);
-                    disp("Extra sleep possible!");
-                    disp(sleep);
-                    disp(msg);
-                    
-                    % Update sleepcontroller and plant controller state
-                    for i = 2:sleep
+                obj.log_data = [obj.log_data; data];
+           
+                % handle data and send extra sleeping
 
-                        % forward pstc and controller for extra sleeping
-                        [~] = obj.sleepcontroller(yhat, false, uhat);
+                % multiply values by 1000 for pstc scripts
 
-                        % Controller
-                        obj.xc = obj.Ac*obj.xc + obj.Bc*yhat;
-                        
-                        obj.u_log = [obj.u_log uhat];
-                        obj.t_log = [obj.t_log -1]; % use -1 to indicate sleep
-                        obj.dk_log = [obj.dk_log -1];
-                        obj.initialized_log = [obj.initialized_log -1];
-                        obj.y_log = [obj.y_log yhat];
+                % level pool 1, 2, 3 and flow 1, 2, 3
+                yhat = [double(data(7))/1000000; double(data(8))/1000000; double(data(9))/1000000]; %data(10); data(11); data(12)];
+                yref = [0.25; 0.20; 0.15];% 0; 0; 0];
 
-                        obj.epoch_log = [obj.epoch_log epoch];
-                        obj.radio_log = [obj.radio_log 0];
-                        
+                yhat = yhat - yref;
+                yhat = yhat * 1000; % to mm
+
+                % event detected?
+                triggered = double(data(13));
+
+                %             % global control gate 1, 2, 3
+                %             u = [data(3); data(4); data(5)] * 1000;
+
+                % local control flow 1, 2, 3
+                uhat = [double(data(10))/1000; double(data(11))/1000; double(data(12))/1000]; % /1000000 * 1000 = /1000;
+
+                % radio
+                radio_on = double(data(2));
+                epoch = double(data(1));
+
+                if obj.end_epoch == -1
+                    obj.end_epoch = epoch + 1800;
+                else
+                    if epoch > obj.end_epoch
+                        obj.deactivate(); % stop after 1800 epochs (==30 mins with no extra sleep)
                     end
                 end
+
+                replay = [uhat; yhat; triggered];
+                obj.replay_data = [obj.replay_data replay];
+
+
+
+                % we now have uhat and yhat (==y if there is a trigger)
+
+                % calculate sleep (using old uhat)
+
+                dk = obj.sleepcontroller(yhat, triggered, uhat);
+
+                obj.u_log = [obj.u_log uhat];
+                obj.t_log = [obj.t_log triggered];
+                obj.dk_log = [obj.dk_log dk];
+                obj.initialized_log = [obj.initialized_log obj.initialized];
+                obj.y_log = [obj.y_log yhat];
+
+                obj.epoch_log = [obj.epoch_log epoch];
+                obj.radio_log = [obj.radio_log radio_on];
+
+                % Controller
+                obj.xc = obj.Ac*obj.xc + obj.Bc*yhat;
+
+
+                if dk > 0  % There is a sleep command, so there was a trigger
+                    sleep = dk;
+
+                    % update for trivial sleep already done, and sending is not
+                    % necessary
+
+                    if sleep > 2
+
+                        % notify network controller about extra sleep
+                        msg = sprintf("0 %s", string(dk-1));
+                        obj.sendMessage(msg);
+                        disp("Extra sleep possible!");
+                        disp(sleep);
+                        disp(msg);
+
+                        % Update sleepcontroller and plant controller state
+                        for i = 2:sleep
+
+                            % forward pstc and controller for extra sleeping
+                            [~] = obj.sleepcontroller(yhat, false, uhat);
+
+                            % Controller
+                            obj.xc = obj.Ac*obj.xc + obj.Bc*yhat;
+
+                            obj.u_log = [obj.u_log uhat];
+                            obj.t_log = [obj.t_log -1]; % use -1 to indicate sleep
+                            obj.dk_log = [obj.dk_log -1];
+                            obj.initialized_log = [obj.initialized_log -1];
+                            obj.y_log = [obj.y_log yhat];
+
+                            obj.epoch_log = [obj.epoch_log epoch];
+                            obj.radio_log = [obj.radio_log 0];
+
+                        end
+                    end
+                end
+
+                fprintf("# k=%d u =(%d, %d, %d) y = (%d, %d, %d) trigger=%d, dk=%d \n", obj.k, uhat(1), uhat(2), uhat(3), yhat(1), yhat(2), yhat(3), triggered, dk);
+                
+                obj.error_log = [obj.error_log [epoch; 0]];
+            else
+                % error, skip... (log although we don't know the epoch)
+                disp('ERROR: communication error');
+                disp(data);
+                obj.error_log = [obj.error_log [0; 1]];
             end
-            
-            fprintf("# k=%d u =(%d, %d, %d) y = (%d, %d, %d) trigger=%d, dk=%d \n", obj.k, uhat(1), uhat(2), uhat(3), yhat(1), yhat(2), yhat(3), triggered, dk);
+
             
         end
         
@@ -339,10 +361,10 @@ classdef FireflyCommunicationPSTC < handle
             Cpd = [1 0 0 0 0 0;0 0 1 0 0 0;0 0 0 0 1 0];
             Dpd = [0 0 0;0 0 0;0 0 0];
             
-            SPS = 8;
-            
-            Apd = [1 0.1180160773202 0 0 0 0;0 0.825052966980536 0 0 0 0;0 0 1 0.316267336378338 0 0;0 0 0 0.69967253737513 0 0;0 0 0 0 1 0.084202651990668;0 0 0 0 0 0.846481724890614];
-            Bpd = [-0.00921309074701414 -0.0112430293218205 0;0.0303241523900404 0 0;0 -0.0119670350796699 -0.017551249648975;0 0.0280305631783212 0;0 0 -0.00769909409566176;0 0 0.0307036550218772];
+%             SPS = 8;
+%             
+%             Apd = [1 0.1180160773202 0 0 0 0;0 0.825052966980536 0 0 0 0;0 0 1 0.316267336378338 0 0;0 0 0 0.69967253737513 0 0;0 0 0 0 1 0.084202651990668;0 0 0 0 0 0.846481724890614];
+%             Bpd = [-0.00921309074701414 -0.0112430293218205 0;0.0303241523900404 0 0;0 -0.0119670350796699 -0.017551249648975;0 0.0280305631783212 0;0 0 -0.00769909409566176;0 0 0.0307036550218772];
             
             Epd = -0.015/0.2279*1/60* 1/SPS * [0; 0; 0; 0; 1; 0];
             
@@ -356,6 +378,8 @@ classdef FireflyCommunicationPSTC < handle
             while kk <= TEND/obj.h
                 
                 % calculate sleep (using old uhat)
+                
+                uhat = (round(uhat * 10))/10;
                 
                 dk = obj.sleepcontroller(yhat, triggered, uhat);
                 
@@ -528,13 +552,7 @@ classdef FireflyCommunicationPSTC < handle
                 
             end
             
-            
-            
-            
-            
-            
-            
-            
+    
             
         end
         
@@ -571,7 +589,9 @@ classdef FireflyCommunicationPSTC < handle
             radio_log = obj.radio_log;
             data_log = obj.log_data;
             
-            save(filename, 'replayData', 'u_log', 'dk_log', 't_log', 'initialized_log', 'y_log', 'radio_log', 'epoch_log', 'data_log');
+            error_log = obj.error_log;
+            
+            save(filename, 'replayData', 'u_log', 'dk_log', 't_log', 'initialized_log', 'y_log', 'radio_log', 'epoch_log', 'data_log', 'error_log');
         end
         
         function loadReplayData(obj, filename)

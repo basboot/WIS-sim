@@ -13,7 +13,7 @@ classdef FireflySimulationPSTC < handle
         flows = [0, 0, 0, 0]
         radios = [0, 0, 0, 0]
         sleep = [1, 1, 1, 1]
-        pressure = [10000, 11000, 12000, 10000, 11000, 12000, 13000, 0]
+        pressure = [0, 0, 0, 0, 0, 0, 0, 0]
         simulationHasRun = true;
         
         % PSTC
@@ -169,13 +169,16 @@ classdef FireflySimulationPSTC < handle
         
         
         function handleMessage(obj, command, id, epoch, data)
+            if (id == 1)
+                disp(sprintf("%d - %s",epoch,command));
+            end
             obj.error_log = [obj.error_log [epoch; 0]];
             if (command == "r")
                 %disp("sensor update request");
                 % run sim on first request
                 % store radio on time
                 obj.radios(id) = data;
-                if (~obj.simulationHasRun)
+                if (id==1)
                     disp("run sim");
                     % Discrete simulation of the plant
 
@@ -221,7 +224,7 @@ classdef FireflySimulationPSTC < handle
             if (command == "f")
                 %disp("flow update request");
                 % save requested flow (scale back to m^3/s)
-                obj.flows(id) = data/10000;
+                obj.flows(id) = data/1000000;
             end
             
             if (command == "s")
@@ -246,7 +249,7 @@ classdef FireflySimulationPSTC < handle
         function callbackMessage(obj, device, ~)
 
             data = readline(device);
-            disp(data)
+            %disp(data)
             
             command = split(data, ",");
             
@@ -469,7 +472,7 @@ classdef FireflySimulationPSTC < handle
                     yd = Cpd*xp; % HIL sim has no noise + noises(:, kk+1)*2/1000;
                     
                     % limit accuracy
-                    factor = 10000;
+                    factor = 1000000;
                     yd = (round(yd * factor))/factor;
                     
                     
@@ -584,9 +587,9 @@ classdef FireflySimulationPSTC < handle
         end
         
         function sendMessage(obj, id, message)
-            if obj.DEBUG
-                fprintf("Send: %s\n", message);
-            end
+%             if obj.DEBUG
+%                 fprintf("Send: %s\n", message);
+%             end
             writeline(obj.device{id}, message)
         end
         
