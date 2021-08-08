@@ -55,6 +55,9 @@ classdef FireflySimulationPSTC < handle
         Wis
         yd
         
+        end_epoch = -1;
+        error_log = [];
+        
     end
     
     methods
@@ -166,6 +169,7 @@ classdef FireflySimulationPSTC < handle
         
         
         function handleMessage(obj, command, id, epoch, data)
+            obj.error_log = [obj.error_log [epoch; 0]];
             if (command == "r")
                 %disp("sensor update request");
                 % run sim on first request
@@ -192,6 +196,13 @@ classdef FireflySimulationPSTC < handle
                         obj.epoch_log = [obj.epoch_log epoch];
                         obj.k_log = [obj.k_log obj.kk];
                         
+                        %  add extra entries in radio log to show radio is
+                        %  off. Note that the radio normally lags 1 period
+                        %  so when doing extra sleep it lags multiple
+                        if (i > 1) 
+                            obj.radio_log = [obj.radio_log [0 0 0 0]];
+                        end
+                        
                     end
                    
                     obj.simulationHasRun = true;
@@ -214,8 +225,17 @@ classdef FireflySimulationPSTC < handle
             end
             
             if (command == "s")
-                % update radios now we all have them
-                obj.radio_log = [obj.radio_log obj.radios'];
+                % update radios now we all have them (only once!)
+                if (id == 1)
+                    obj.radio_log = [obj.radio_log obj.radios'];
+                    if obj.end_epoch == -1
+                        obj.end_epoch = epoch + 1800;
+                    else
+                        if epoch > obj.end_epoch
+                            obj.deactivate(); % stop after 1800 epochs (==30 mins with no extra sleep)
+                        end
+                    end
+                end
                 %disp("sleep update request");
                 obj.sleep(id) = data;
                 % reset sim
@@ -230,9 +250,13 @@ classdef FireflySimulationPSTC < handle
             
             command = split(data, ",");
             
-            assert(size(command,1) == 4, "Received garbled data.");
-            
-            obj.handleMessage(command(1), double(command(2))-200, double(command(3)), double(command(4)))    
+            %assert(size(command,1) == 4, "Received garbled data.");
+            if size(command,1) == 4
+                obj.handleMessage(command(1), double(command(2))-200, double(command(3)), double(command(4)))    
+            else
+                % error, skip... (log although we don't know the epoch)
+                obj.error_log = [obj.error_log [0; 1]];
+            end
         end
         
         function [dk] = sleepcontroller(obj, yhat, triggered, uhat)
@@ -578,7 +602,8 @@ classdef FireflySimulationPSTC < handle
             
             radio_log = obj.radio_log;
                         
-            save(filename, 'replayData', 'u_log', 'y_log', 'epoch_log', 'k_log', 'radio_log');
+            error_log = obj.error_log;
+            save(filename, 'replayData', 'u_log', 'y_log', 'epoch_log', 'k_log', 'radio_log', 'error_log');
         end
         
         function loadReplayData(obj, filename)

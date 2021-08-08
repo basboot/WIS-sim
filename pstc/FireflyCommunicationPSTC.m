@@ -33,6 +33,10 @@ classdef FireflyCommunicationPSTC < handle
         u_log = [];
         t_log = [];
         initialized_log = [];
+        epoch_log = [];
+        radio_log = [];   
+        
+        end_epoch = -1;
     end
     
     methods
@@ -124,8 +128,7 @@ classdef FireflyCommunicationPSTC < handle
                 disp(data(1));
             end
             obj.log_data = [obj.log_data; data];
-            
-            
+           
             % handle data and send extra sleeping
             
             % multiply values by 1000 for pstc scripts
@@ -150,6 +153,14 @@ classdef FireflyCommunicationPSTC < handle
             radio_on = data(2);
             epoch = data(1);
             
+            if obj.end_epoch == -1
+                obj.end_epoch = epoch + 1800;
+            else
+                if epoch > obj.end_epoch
+                    obj.deactivate(); % stop after 1800 epochs (==30 mins with no extra sleep)
+                end
+            end
+            
             replay = [uhat; yhat; triggered];
             obj.replay_data = [obj.replay_data replay];
             
@@ -167,6 +178,9 @@ classdef FireflyCommunicationPSTC < handle
             obj.initialized_log = [obj.initialized_log obj.initialized];
             obj.y_log = [obj.y_log yhat];
             
+            obj.epoch_log = [obj.epoch_log epoch];
+            obj.radio_log = [obj.radio_log radio_on];
+            
             % Controller
             obj.xc = obj.Ac*obj.xc + obj.Bc*yhat;
             
@@ -181,27 +195,30 @@ classdef FireflyCommunicationPSTC < handle
                     
                     % notify network controller about extra sleep
                     msg = sprintf("0 %s", string(dk-1));
-%                     obj.sendMessage(msg);
+                    obj.sendMessage(msg);
                     disp("Extra sleep possible!");
                     disp(sleep);
                     disp(msg);
                     
-%                     % Update sleepcontroller and plant controller state
-%                     for i = 2:sleep
-% 
-%                         % forward pstc and controller for extra sleeping
-%                         [~] = obj.sleepcontroller(yhat, false, uhat);
-% 
-%                         % Controller
-%                         obj.xc = obj.Ac*obj.xc + obj.Bc*yhat;
-%                         
-%                         obj.u_log = [obj.u_log uhat];
-%                         obj.t_log = [obj.t_log -1]; % use -1 to indicate sleep
-%                         obj.dk_log = [obj.dk_log -1];
-%                         obj.initialized_log = [obj.initialized_log -1];
-%                         obj.y_log = [obj.y_log yhat];
-%                         
-%                     end
+                    % Update sleepcontroller and plant controller state
+                    for i = 2:sleep
+
+                        % forward pstc and controller for extra sleeping
+                        [~] = obj.sleepcontroller(yhat, false, uhat);
+
+                        % Controller
+                        obj.xc = obj.Ac*obj.xc + obj.Bc*yhat;
+                        
+                        obj.u_log = [obj.u_log uhat];
+                        obj.t_log = [obj.t_log -1]; % use -1 to indicate sleep
+                        obj.dk_log = [obj.dk_log -1];
+                        obj.initialized_log = [obj.initialized_log -1];
+                        obj.y_log = [obj.y_log yhat];
+
+                        obj.epoch_log = [obj.epoch_log epoch];
+                        obj.radio_log = [obj.radio_log 0];
+                        
+                    end
                 end
             end
             
@@ -550,7 +567,11 @@ classdef FireflyCommunicationPSTC < handle
             initialized_log = obj.initialized_log;
             y_log = obj.y_log;
             
-            save(filename, 'replayData', 'u_log', 'dk_log', 't_log', 'initialized_log', 'y_log');
+            epoch_log = obj.epoch_log;
+            radio_log = obj.radio_log;
+            data_log = obj.log_data;
+            
+            save(filename, 'replayData', 'u_log', 'dk_log', 't_log', 'initialized_log', 'y_log', 'radio_log', 'epoch_log', 'data_log');
         end
         
         function loadReplayData(obj, filename)
