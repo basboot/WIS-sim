@@ -86,6 +86,16 @@ if ~initialized
         end
     end
 elseif triggered   
+    % protection against exceeding the heartbeat
+    if (k > kfinal)
+        % This happens when etc does not trigger within the heartbeat
+        disp('Re-initializing (k > kfinal)')
+        dk = 1;
+        k = 0;
+        initialized = false;
+        return
+    end
+    
     % Get transition matrix
     Mk = MM(:,:,k);  % Current triggering time is k
     Wkk = Wk(:,:,k);     
