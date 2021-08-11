@@ -178,7 +178,7 @@ classdef FireflySimulationPSTC < handle
                 % run sim on first request
                 % store radio on time
                 obj.radios(id) = data;
-                if (id==1)
+                if (~obj.simulationHasRun)
                     disp("run sim");
                     % Discrete simulation of the plant
 
