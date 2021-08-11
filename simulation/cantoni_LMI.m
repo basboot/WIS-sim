@@ -652,6 +652,11 @@ KB = zeros(nPool * 2, nPool);
 KC = zeros(nPool, nPool * 2);
 KD = zeros(nPool, nPool);
 
+KAd = zeros(nPool * 2, nPool * 2);
+KBd = zeros(nPool * 2, nPool);
+KCd = zeros(nPool, nPool * 2);
+KDd = zeros(nPool, nPool);
+
 for i = 1:nPool
     tempKi =  comb_contr.D(i,i) * W{i};
     [tempA, tempB, tempC, tempD] = tf2ss(tempKi.Numerator{1}, tempKi.Denominator{1});
@@ -659,11 +664,25 @@ for i = 1:nPool
     KB(2*i-1:2*i, i) = tempB;
     KC(i, 2*i-1:2*i) = tempC;
     KD(i,i) = tempD;
+    
+    % Alternative approch (direct digital) to avoid discretizing problems
+    [tA ,tB ,tC ,tD ] = tf2ss( Wd{i}.Numerator{1} , Wd{i}.Denominator{1} )
+    % multiply B with K_i (P controller)
+    tB = comb_contr.D(i,i) *tB;
+    tD = comb_contr.D(i,i) *tD;
+    
+    KAd(2*i-1:2*i, 2*i-1:2*i) = tA;
+    KBd(2*i-1:2*i, i) = tB;
+    KCd(i, 2*i-1:2*i) = tC;
+    KDd(i,i) = tD;
+    
 end
 
 % create continuous and discrete ss models
 comb_K_cont = ss(KA, KB, KC, KD);
 comb_K_disc = c2d(comb_K_cont,h,'tustin');
+
+
 
 %% Pools
 
