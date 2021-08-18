@@ -1,8 +1,8 @@
 %% ETC / STC parameters
 
 % triggering function parameters
-TRIG_LEVEL = 2;
-sigma = 0.1; % 0.01
+TRIG_LEVEL = 1;%1;%0.1; %2;
+sigma = 0.1;%0.1;%0.0025; %0.1; % 0.01
 kfinal = 30;  % Heartbeat
 
 %% Q Matrix (\bar{Q} in the paper)

@@ -18,7 +18,7 @@ end
 
 nPool = 3; % The number of pools. 
 
-tuning_process = 1; % Set to 1 when in the process of tuning for bode plots
+tuning_process = 0; % Set to 1 when in the process of tuning for bode plots
 tuning_version = '1'; % used to generate different figure names for different setups
 
 %% Loop shaping weights parameters from [1] % NEED CHANGES FOR THE LAB SETUP
