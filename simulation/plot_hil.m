@@ -6,30 +6,48 @@
 target = [0.25 0.20 0.15];
 showPlots = false;
 
+showFigures = false; %true = Latex code for figures, false = Latex code for table
+
 useCachedData = true;
 
-nExperiments = 20;
+nExperiments = 16;
+experiments{1} = ["20210805test_pstc_force_trigger", "Periodic control", ""];
 % filename, sigma, epsilon
-experiments{1} = ["continuous_disturbance_periodic", "Periodic control", ""];
+%experiments{1} = ["continuous_disturbance_periodic", "Periodic control", ""];
 experiments{2} = ["continuous_disturbance_etc_no_trigger", "ETC", "(never trigger)"];
 experiments{3} = ["continuous_disturbance_etc_force_trigger", "ETC", "(always trigger)"];
 experiments{4} = ["continuous_disturbance_etc_0-0-0-0", "0", "0"];
-experiments{5} = ["continuous_disturbance_etc_0-1-1-flow", "0.1 (flow)", "1"];
-experiments{6} = ["continuous_disturbance_etc_0-1-1", "0.1", "1"];
-experiments{7} = ["continuous_disturbance_etc_0-05-1", "0.5", "1"];
-experiments{8} = ["continuous_disturbance_etc_0-05-1-flow", "0.5 (flow)", "1"];
-experiments{9} = ["continuous_disturbance_etc_0-01-1", "0.01", "1"];
-experiments{10} = ["continuous_disturbance_etc_0-005-1", "0.005", "1"];
-experiments{11} = ["continuous_disturbance_etc_0-0025-1", "0.0025", "1"];
-experiments{12} = ["continuous_disturbance_etc_0-00125-1", "0.00125", "1"];
-experiments{13} = ["continuous_disturbance_etc_0-01-0-1", "0.01", "0.1"];
-experiments{14} = ["continuous_disturbance_etc_0-005-0-1", "0.005", "0.1"];
-experiments{15} = ["continuous_disturbance_etc_0-0025-0-1", "0.0025", "0.1"]; 
-experiments{16} = ["continuous_disturbance_etc_0-00125-0-1", "0.00125", "0.1"]; 
-experiments{17} = ["continuous_disturbance_etc_0-01-0-01", "0.01", "0.01"];
-experiments{18} = ["continuous_disturbance_etc_0-005-0-01", "0.005", "0.01"];
-experiments{19} = ["continuous_disturbance_etc_0-0025-0-01", "0.0025", "0.01"];
-experiments{20} = ["continuous_disturbance_etc_0-00125-0-01", "0.00125", "0.01"]; 
+
+experiments{5} = ["new_triggering_etc_0-1_1", "0.1", "1"];
+experiments{6} = ["new_triggering_etc_0-05_1", "0.05", "1"];
+experiments{7} = ["new_triggering_etc_0-025_1", "0.025", "1"];
+experiments{8} = ["new_triggering_etc_0-05_2", "0.05", "2"];
+experiments{9} = ["new_triggering_etc_0-025_2", "0.025", "2"];
+
+experiments{10} = ["new_triggering_etc_0-1_2", "0.1", "2"];
+experiments{11} = ["new_triggering_etc_0-2_2", "0.2", "2"];
+experiments{12} = ["new_triggering_etc_0-4_2", "0.4", "2"];
+experiments{13} = ["new_triggering_etc_0-4_4", "0.4", "4"];
+experiments{14} = ["new_triggering_etc_0-4_8", "0.4", "8"];
+experiments{15} = ["new_triggering_etc_0-4_16", "0.4", "16"];
+experiments{16} = ["new_triggering_etc_0-2_16", "0.2", "16"];
+
+% experiments{5} = ["continuous_disturbance_etc_0-1-1-flow", "0.1 (flow)", "1"];
+% experiments{6} = ["continuous_disturbance_etc_0-1-1", "0.1", "1"];
+% experiments{7} = ["continuous_disturbance_etc_0-05-1", "0.5", "1"];
+% experiments{8} = ["continuous_disturbance_etc_0-05-1-flow", "0.5 (flow)", "1"];
+% experiments{9} = ["continuous_disturbance_etc_0-01-1", "0.01", "1"];
+% experiments{10} = ["continuous_disturbance_etc_0-005-1", "0.005", "1"];
+% experiments{11} = ["continuous_disturbance_etc_0-0025-1", "0.0025", "1"];
+% experiments{12} = ["continuous_disturbance_etc_0-00125-1", "0.00125", "1"];
+% experiments{13} = ["continuous_disturbance_etc_0-01-0-1", "0.01", "0.1"];
+% experiments{14} = ["continuous_disturbance_etc_0-005-0-1", "0.005", "0.1"];
+% experiments{15} = ["continuous_disturbance_etc_0-0025-0-1", "0.0025", "0.1"]; 
+% experiments{16} = ["continuous_disturbance_etc_0-00125-0-1", "0.00125", "0.1"]; 
+% experiments{17} = ["continuous_disturbance_etc_0-01-0-01", "0.01", "0.01"];
+% experiments{18} = ["continuous_disturbance_etc_0-005-0-01", "0.005", "0.01"];
+% experiments{19} = ["continuous_disturbance_etc_0-0025-0-01", "0.0025", "0.01"];
+% experiments{20} = ["continuous_disturbance_etc_0-00125-0-01", "0.00125", "0.01"]; 
 
 
 
@@ -123,8 +141,27 @@ for iExperiments = 1: nExperiments
     mtse = itse / samples;
 
     %disp(experimentName);
-    disp(sprintf("%s & %s & %.1f & %.2f & %.0f & %.0f  \\\\", experiments{iExperiments}(2), experiments{iExperiments}(3), total_on, trigger_ratio, mse, mtse));
-
+    if showFigures
+        
+disp(sprintf("        \\begin{figure}[H]"));
+disp(sprintf("    \\begin{subfigure}{0.5\\linewidth}"));
+disp(sprintf("        \\centering"));
+disp(sprintf("        \\includegraphics[trim={0.0cm 0.0cm 0.0cm 0.0cm},clip,width=1\\textwidth]{images/%s-levels.pdf}", experiments{iExperiments}(1)));
+disp(sprintf("        \\caption{Water levels}"));
+disp(sprintf("        \\label{fig:%s-levels}", experiments{iExperiments}(1)));
+disp(sprintf("    \\end{subfigure}"));
+disp(sprintf("    \\begin{subfigure}{0.5\\linewidth}"));
+disp(sprintf("        \\centering"));
+disp(sprintf("        \\includegraphics[trim={0.0cm 0.0cm 0.0cm 0.0cm},clip,width=1\\textwidth]{images/%s-radio.pdf}", experiments{iExperiments}(1)));
+disp(sprintf("        \\caption{Radio}"));
+disp(sprintf("        \\label{fig:%s-radio}", experiments{iExperiments}(1)));
+disp(sprintf("    \\end{subfigure}"));
+disp(sprintf("    \\caption{Time evolution of water levels and radio on time after a step disturbance on the HIL simulation using event-triggered wireless control with controller from Section\\,\\ref{sec:ctrl_local_controllers_exceed} ($\\sigma=%s, \\epsilon=%s$).}",experiments{iExperiments}(2), experiments{iExperiments}(3)));
+disp(sprintf("    \\label{fig:%s}", experiments{iExperiments}(1)));
+disp(sprintf("    \\end{figure}"));
+    else
+        disp(sprintf("%s & %s & %.1f & %.0f & %.0f & %.0f  \\\\", experiments{iExperiments}(2), experiments{iExperiments}(3), total_on, triggers, mse, mtse));
+    end
 end
 
 % % .02 9.1252e-04 (37.47)

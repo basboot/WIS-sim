@@ -4,30 +4,37 @@
 % flow, level, servo, epoch, radio_on
 
 target = [0.25 0.20 0.15];
-showPlots = true;
+showPlots = false;
+showFigures = true; %true = Latex code for figures, false = Latex code for table
+
 
 useCachedData = true;
 
-nExperiments = 1;
-experiments{1} = ["20210810test0-01_1_force_trigger_python", "PSTC", "(force trigger)", "20210810test0-01_1_force_trigger_controller"];
 
+nExperiments = 6;
+%experiments{1} = ["20210810test0-01_1_force_trigger_python", "PSTC", "(force trigger)", "20210810test0-01_1_force_trigger_controller"];
 %experiments{1} = ["20210810test0-01_1_no_trigger_python", "PSTC", "(no trigger)", "20210810test0-01_1_no_trigger_controller"];
-
 %experiments{1} = ["20210810test0-01_1_python2", "PSTC", "(0.01 1)", "20210810test0-01_1_controller2"];
-
 %experiments{1} = ["20210810test0-01_1_1pct_controller", "PSTC", "(0.01 1)", "20210810test0-01_1_1pct_controller"];
-
 %experiments{1} = ["20210810test0-01_1_python_ss", "PSTC", "(0.01 1)", "20210810test0-01_1_controller_ss"];
-
 %experiments{1} = ["20210810test0-1_2_0-1pct_python", "PSTC", "(0.1 2)", "20210810test0-1_2_0-1pct_controller"];
-
 % possibly not the same run :-(
 %experiments{1} = ["20210811test0-1_1_python", "PSTC", "(0.1 1)", "20210811test0-1_1_controller"];
+% still errors
+% experiments{1} = ["20210811test0-05_1_python", "PSTC", "(0.05 1)", "20210811test0-05_1_controller"];
+% experiments{1} = ["20210813test0-1_1_python", "PSTC", "(0.1 1)", "20210813test0-1_1_controller"];
+% experiments{1} = ["20210813test0-2_2_python_kf100_fouten", "PSTC", "(0.2 2)", "20210813test0-2_2_controller_kf100_fouten"];
 
-experiments{1} = ["20210811test0-05_1_python", "PSTC", "(0.05 1)", "20210811test0-05_1_controller"];
 
+% for report
+experiments{1} = ["20210818temp_controllerlogging_python", "ETC+", "(0.1 1 demo re-init)", "20210818temp_controllerlogging_controller"];
+experiments{2} = ["20210817etc_no_trigger_heartbeat30_python", "ETC", "(no trigger)", "20210817etc_no_trigger_heartbeat30_controller"];
+experiments{3} = ["20210815etc0-1_1_python", "ETC", "(0.1 1)", "20210815etc0-1_1_controller"];
+experiments{4} = ["20210815test0-1_1_python", "ETC+", "(0.1 1)", "20210815test0-1_1_controller"];
+experiments{5} = ["20210813etc0-2_2_python", "ETC", "(0.2 2)", "20210813etc0-2_2_controller"];
+experiments{6} = ["20210813test0-2_2_python", "ETC+", "(0.2 2)", "20210813test0-2_2_controller"];
+% has an error, but late in the experiment, so probably still usefull
 
-% filename sim, sigma, epsilon, filename contr
 
 for iExperiments = 1: nExperiments
 
@@ -91,13 +98,17 @@ for iExperiments = 1: nExperiments
         title("Radio on");
     end
 
+%     % slice to only use the beginning
+%     sensors.radio_log = sensors.radio_log(:,1:800);
+%     sensors.y_log = sensors.y_log(:,1:800);
 
     % take average of 3 FF for more accurate result
     total_on = (sum(sum(sensors.radio_log'))/3)/1000; %s
 
     samples = size(sensors.y_log, 2);
 
-    triggers = sum(sum(((sensors.radio_log')) > 30))/3;
+    triggers = sum(sum(((sensors.radio_log')) > 50))/3;
+    
 
     trigger_ratio = triggers / samples;
 
@@ -120,65 +131,105 @@ for iExperiments = 1: nExperiments
     mtse = itse / samples;
 
     %disp(experimentName);
-    disp(sprintf("%s & %s & %.1f & %.2f & %.0f & %.0f  \\\\", experiments{iExperiments}(2), experiments{iExperiments}(3), total_on, trigger_ratio, mse, mtse));
+%     sum(controller.t_log')
+    % trigger data from controller seems more reliable
+    triggers = sum(controller.t_log');
+%     sum(controller.initialized_log')
+
+    if showFigures
+        
+disp(sprintf("        \\begin{figure}[H]"));
+disp(sprintf("    \\begin{subfigure}{0.5\\linewidth}"));
+disp(sprintf("        \\centering"));
+disp(sprintf("        \\includegraphics[trim={0.0cm 0.0cm 0.0cm 0.0cm},clip,width=1\\textwidth]{images/%s-levels.pdf}", experiments{iExperiments}(1)));
+disp(sprintf("        \\caption{Water levels}"));
+disp(sprintf("        \\label{fig:%s-levels}", experiments{iExperiments}(1)));
+disp(sprintf("    \\end{subfigure}"));
+disp(sprintf("    \\begin{subfigure}{0.5\\linewidth}"));
+disp(sprintf("        \\centering"));
+disp(sprintf("        \\includegraphics[trim={0.0cm 0.0cm 0.0cm 0.0cm},clip,width=1\\textwidth]{images/%s-radio.pdf}", experiments{iExperiments}(1)));
+disp(sprintf("        \\caption{Radio}"));
+disp(sprintf("        \\label{fig:%s-radio}", experiments{iExperiments}(1)));
+disp(sprintf("    \\end{subfigure}"));
 
 
-    figure()
-    plot(sensors.u_log');
-    title('Sim - Control signal');
-    
-    % PSTC plots
-    figure()
-    plot(controller.u_log');
-    ylim([0 20]);
-    title('PSTC - Control signal');
-    
-    figure()
-    plot(controller.dk_log');
-    title('PSTC - Calculated sleeping times');
-    
-    figure()
-    plot(controller.t_log');
-    title('PSTC - Triggers');
-    
-    figure()
-    plot(controller.initialized_log');
-    title('PSTC - Initialisation state');
-    
-    figure()
-    plot(controller.y_log');
-    title('PSTC - Water levels');
-    
-    figure()
-    plot(controller.radio_log');
-    title('PSTC - Radio');
-    
-    
-%     %% simulation for comparison
-%     if showPlots   
-%         figure();
-%         plot(sim.y_log'/1000 + [0.25 0.20 0.15]);
-%         hold on;
-% 
-%         xlabel('time (s)')
-%         ylabel('level (m)')
-%         legend('pool1', 'pool2', 'pool3');
-% 
-%         yline(0.25,'-','reference 1', 'LabelHorizontalAlignment', 'left', 'HandleVisibility','off');
-%         yline(0.20,'-','reference 2', 'LabelHorizontalAlignment', 'left', 'HandleVisibility','off');
-%         yline(0.15,'-','reference 3', 'LabelHorizontalAlignment', 'left', 'HandleVisibility','off');
-% 
-%         saveFigureEps(sprintf("%s-levels", experimentNameSim));
-% 
-%         title("FULL Simulation Water levels");
-%         
-%         figure()
-%         plot(sim.u_log');
-%         ylim([0 20]);
-%         title('FULL SIM - Control signal');
-%     end
-    
-  
+disp(sprintf("    \\begin{subfigure}{0.5\\linewidth}"));
+disp(sprintf("        \\centering"));
+disp(sprintf("        \\includegraphics[trim={0.0cm 0.0cm 0.0cm 0.0cm},clip,width=1\\textwidth]{images/%s-controller_sleeping.pdf}", experiments{iExperiments}(1)));
+disp(sprintf("        \\caption{Sleeping periods}"));
+disp(sprintf("        \\label{fig:%s-controller_sleeping}", experiments{iExperiments}(1)));
+disp(sprintf("    \\end{subfigure}"));
+disp(sprintf("    \\begin{subfigure}{0.5\\linewidth}"));
+disp(sprintf("        \\centering"));
+disp(sprintf("        \\includegraphics[trim={0.0cm 0.0cm 0.0cm 0.0cm},clip,width=1\\textwidth]{images/%s-controller_init.pdf}", experiments{iExperiments}(1)));
+disp(sprintf("        \\caption{Initialisation state}"));
+disp(sprintf("        \\label{fig:%s-controller_init}", experiments{iExperiments}(1)));
+disp(sprintf("    \\end{subfigure}"));
+
+disp(sprintf("    \\caption{Time evolution of water levels, radio on time, calculated sleeping periods and initialisation state after a step disturbance on the HIL simulation using ETC+ with controller from Section\\,\\ref{sec:ctrl_local_controllers_exceed} ($\\sigma=%s, \\epsilon=%s$).}",experiments{iExperiments}(2), experiments{iExperiments}(3)));
+disp(sprintf("    \\label{fig:%s}", experiments{iExperiments}(1)));
+disp(sprintf("    \\end{figure}"));
+    else
+    disp(sprintf("%s & %s & %.1f & %d & %.0f & %.0f  \\\\", experiments{iExperiments}(2), experiments{iExperiments}(3), total_on, triggers, mse, mtse));
+    end
+
+    if showPlots 
+        figure()
+        plot(sensors.u_log');
+        title('Sim - Control signal');
+
+        % PSTC plots
+        figure()
+        plot(controller.u_log');
+        ylim([0 20]);
+        title('PSTC - Control signal');
+
+    %     figure()
+    %     plot(controller.dk_log');
+    %     title('PSTC - Calculated sleeping times');
+
+        figure();
+        plot(controller.dk_log');
+        xlabel('time (s)')
+        ylabel('conservative sleeping periods')   
+        saveFigureEps(sprintf("%s-controller_sleeping", experimentNameSim)); 
+        title('PSTC - sleeping');
+
+        figure()
+        plot(controller.t_log');
+        title('PSTC - Triggers');
+
+    %     figure()
+    %     plot(controller.initialized_log');
+    %     title('PSTC - Initialisation state');
+
+        figure();
+        plot(controller.initialized_log');
+        xlabel('time (s)')
+        ylabel('initialisation state')
+
+        saveFigureEps(sprintf("%s-controller_init", experimentNameSim)); 
+        title('PSTC - Initialisation state');
+
+        figure()
+        plot(controller.y_log');
+        title('PSTC - Water levels');
+
+    %     figure()
+    %     plot();
+    %     title('PSTC - Radio');
+
+        figure();
+    %     yyaxis left
+        plot(controller.radio_log');
+        xlabel('time (s)')
+        ylabel('radio on (ms)')
+        ylim([0 100]) % fix scale for comparison and crop to avoid scaling caused by single outliers
+
+        saveFigureEps(sprintf("%s-controller_radio", experimentNameSim));
+
+        title("Radio on - Controller");
+    end
     
 end
 
