@@ -38,6 +38,7 @@ classdef FireflyCommunicationPSTC < handle
         
         end_epoch = -1;
         error_log = [];
+        current_epoch = -1;
     end
     
     methods
@@ -168,9 +169,18 @@ classdef FireflyCommunicationPSTC < handle
                 % local control flow 1, 2, 3
                 uhat = [double(data(10))/1000; double(data(11))/1000; double(data(12))/1000]; % /1000000 * 1000 = /1000;
 
+                if any(abs(uhat) > 100) || any(abs(yhat) > 100)
+                    disp("ERROR: communication error, skip (should only happen at at start)")
+                    return
+                end
                 % radio
                 radio_on = double(data(2));
                 epoch = double(data(1));
+                
+                if obj.current_epoch > -1
+                    assert(epoch == obj.current_epoch +1, "Missed an epoch!");
+                    obj.current_epoch = epoch;    
+                end
 
                 if obj.end_epoch == -1
                     obj.end_epoch = epoch + 1800;
@@ -188,6 +198,10 @@ classdef FireflyCommunicationPSTC < handle
                 % we now have uhat and yhat (==y if there is a trigger)
 
                 % calculate sleep (using old uhat)
+                
+                if ~obj.initialized
+                    triggered = false;
+                end
 
                 dk = obj.sleepcontroller(yhat, triggered, uhat);
 
@@ -382,18 +396,24 @@ classdef FireflyCommunicationPSTC < handle
             
             Epd = -0.015/0.2279*1/60* 1/SPS * [0; 0; 0; 0; 1; 0];
             
-            xp =[0; 0; 0; 0; 0; 0]; % digital model does not have the disturbance state
+            xp =[0.25; 0; 0.20; 0; 0.15; 0]; % digital model does not have the disturbance state
+            yref = [0.25; 0.20; 0.15];
+            
             
             % init timestep
             kk = 1;
             prevKK = 0;
+            
+            Wis = load("../identification/identification.mat");
             
             % simulation loop
             while kk <= TEND/obj.h
                 
                 % calculate sleep (using old uhat)
                 
-                uhat = (round(uhat * 10))/10;
+                % limit precision send to pstc
+                uhat = (round(uhat * 1000))/1000;
+                yhat = (round(yhat * 1000))/1000;
                 
                 dk = obj.sleepcontroller(yhat, triggered, uhat);
                 
@@ -401,21 +421,6 @@ classdef FireflyCommunicationPSTC < handle
                 u = obj.Cc*obj.xc + obj.Dc*yhat;
                 obj.xc = obj.Ac*obj.xc + obj.Bc*yhat;
                 
-                % Control is sent with limited precision from Firefly to HIL
-                scaledU = u ./ 1000;
-                for i = 1:3
-                    if (scaledU(i) < -0.01)
-                        scaledU(i) = 0;
-                    else
-                        if (scaledU(i) > 0.05)
-                            scaledU(i) = 65535;
-                        else
-                            scaledU(i) = round(((scaledU(i) + 0.01) * 1092250));
-                        end
-                    end
-                    
-                    u(i) = ((scaledU(i) / 1092250) - 0.01) * 1000;
-                end
                 
                 % log u (flow), trigger, calculated sleeping periods
                 obj.u_log = [obj.u_log u];
@@ -449,40 +454,28 @@ classdef FireflyCommunicationPSTC < handle
                         obj.xc = obj.Ac*obj.xc + obj.Bc*yhat;
                     end
                     
-                    % Continuous simulation of the plant
-                    % create a timing problem of max +- 1/8 period
-                    %                     currKK = kk + (rand() - 0.5) * 0.25;
-                    %                     [tt,xpode] = ode45(@(t,x) odeplant(t, x, uhat), obj.h*[prevKK currKK], obj.xp);
-                    %                     prevKK = currKK;
-                    %                     obj.xp = xpode(end,:)';
-                    %
-                    %                     y = obj.Cp*obj.xp + noises(:, kk+1)*2;
-                    
-                    % Discrete simulation of the plant
-                    % Create timing problem of a few samples
-                    if SPS > 1
-                        timingProblem = round((rand() - 0.5) * 0);
-                    else
-                        timingProblem = 0; % cannot create timing problem for testcase period=1
-                    end
-                    
                     % Update plant state, disturbance starts after 20 secs
-                    for j = 1:SPS+timingProblem
-                        xp = Apd*xp + Bpd*uhat/1000 + Epd * (kk*obj.h >= 20);
-                    end
+                    xp = Apd*xp + Bpd*uhat/1000 + Epd * (kk*obj.h >= 20);
                     
                     yd = Cpd*xp; % HIL sim has no noise + noises(:, kk+1)*2/1000;
                     
-                    % limit accuracy
-                    factor = 10000;
-                    yd = (round(yd * factor))/factor;
-                    
+
                     
                     obj.yd_log = [obj.yd_log, yd];
                     
+                    % limit sensor accuracy, based on pressure sensors
+                    % convert water levels to pressure
+                    levels = [0.30, yd(1), yd(1), yd(2), yd(2), yd(3), yd(3)];
+                    pressures = ((levels * 100) - Wis.Wis.b) ./ Wis.Wis.a;
+                    pressures = round(pressures);
+                    levels = pressures .* Wis.Wis.a + Wis.Wis.b;
+                    yd = ([levels(3); levels(5); levels(7)])/100;
+                    
+                    % remove ref
+                    yd = yd - yref;
+                    
                     % use digital y
                     y = yd*1000;
-                    
                     
                     obj.y_log = [obj.y_log, y];
                     
