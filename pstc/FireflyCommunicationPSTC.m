@@ -156,6 +156,12 @@ classdef FireflyCommunicationPSTC < handle
 
                 % event detected?
                 triggered = double(data(13));
+                
+                if triggered == 2
+                    % test: force re-init on bad reception
+                    disp("COMMUNICATION ERROR WITH ONE OF THE FIREFLIES, REINIT");
+                    obj.initialized = false;
+                end
 
                 %             % global control gate 1, 2, 3
                 %             u = [data(3); data(4); data(5)] * 1000;
@@ -211,14 +217,15 @@ classdef FireflyCommunicationPSTC < handle
                 % Controller
                 obj.xc = obj.Ac*obj.xc + obj.Bc*yhat;
 
-
+%                 % never extra sleep = normal ETC
+%                 dk = 1;
+                
                 if dk > 0  % There is a sleep command, so there was a trigger
                     sleep = dk;
 
                     % update for trivial sleep already done, and sending is not
                     % necessary
                     
-                    % dk == 1
                     if ~obj.initialized
                         % not initialised yet, so force an update
                         obj.sendMessage("0 0");
@@ -245,7 +252,7 @@ classdef FireflyCommunicationPSTC < handle
 
                             obj.u_log = [obj.u_log uhat];
                             obj.t_log = [obj.t_log 0]; % no trigger in sleep
-                            obj.dk_log = [obj.dk_log -1];
+                            obj.dk_log = [obj.dk_log 0]; % no prediction in sleep
                             obj.initialized_log = [obj.initialized_log 1]; % initialized in sleep
                             obj.y_log = [obj.y_log yhat];
 
