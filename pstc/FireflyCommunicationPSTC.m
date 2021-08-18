@@ -32,6 +32,7 @@ classdef FireflyCommunicationPSTC < handle
         dk_log = [];
         u_log = [];
         t_log = [];
+        xc_log = [];
         initialized_log = [];
         epoch_log = [];
         radio_log = [];   
@@ -216,6 +217,7 @@ classdef FireflyCommunicationPSTC < handle
 
                 % Controller
                 obj.xc = obj.Ac*obj.xc + obj.Bc*yhat;
+                obj.xc_log = [obj.xc_log obj.xc];
 
 %                 % never extra sleep = normal ETC
 %                 dk = 1;
@@ -249,6 +251,7 @@ classdef FireflyCommunicationPSTC < handle
 
                             % Controller
                             obj.xc = obj.Ac*obj.xc + obj.Bc*yhat;
+                            obj.xc_log = [obj.xc_log obj.xc];
 
                             obj.u_log = [obj.u_log uhat];
                             obj.t_log = [obj.t_log 0]; % no trigger in sleep
@@ -598,7 +601,9 @@ classdef FireflyCommunicationPSTC < handle
             
             error_log = obj.error_log;
             
-            save(filename, 'replayData', 'u_log', 'dk_log', 't_log', 'initialized_log', 'y_log', 'radio_log', 'epoch_log', 'data_log', 'error_log');
+            xc_log = obj.xc_log;
+            
+            save(filename, 'replayData', 'u_log', 'dk_log', 't_log', 'initialized_log', 'y_log', 'radio_log', 'epoch_log', 'data_log', 'error_log', 'xc_log');
         end
         
         function loadReplayData(obj, filename)
