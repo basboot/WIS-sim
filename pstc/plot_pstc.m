@@ -1,6 +1,6 @@
 %% 
 
-% Time series from Simulink, with Data for 3 pools / FFs
+% Time series from PSTC and Python sim, with Data for 3 pools / FFs
 % flow, level, servo, epoch, radio_on
 
 target = [0.25 0.20 0.15];
@@ -12,28 +12,15 @@ useCachedData = true;
 
 
 nExperiments = 6;
-%experiments{1} = ["20210810test0-01_1_force_trigger_python", "PSTC", "(force trigger)", "20210810test0-01_1_force_trigger_controller"];
-%experiments{1} = ["20210810test0-01_1_no_trigger_python", "PSTC", "(no trigger)", "20210810test0-01_1_no_trigger_controller"];
-%experiments{1} = ["20210810test0-01_1_python2", "PSTC", "(0.01 1)", "20210810test0-01_1_controller2"];
-%experiments{1} = ["20210810test0-01_1_1pct_controller", "PSTC", "(0.01 1)", "20210810test0-01_1_1pct_controller"];
-%experiments{1} = ["20210810test0-01_1_python_ss", "PSTC", "(0.01 1)", "20210810test0-01_1_controller_ss"];
-%experiments{1} = ["20210810test0-1_2_0-1pct_python", "PSTC", "(0.1 2)", "20210810test0-1_2_0-1pct_controller"];
-% possibly not the same run :-(
-%experiments{1} = ["20210811test0-1_1_python", "PSTC", "(0.1 1)", "20210811test0-1_1_controller"];
-% still errors
-% experiments{1} = ["20210811test0-05_1_python", "PSTC", "(0.05 1)", "20210811test0-05_1_controller"];
-% experiments{1} = ["20210813test0-1_1_python", "PSTC", "(0.1 1)", "20210813test0-1_1_controller"];
-% experiments{1} = ["20210813test0-2_2_python_kf100_fouten", "PSTC", "(0.2 2)", "20210813test0-2_2_controller_kf100_fouten"];
-
 
 % for report
 experiments{1} = ["20210818temp_controllerlogging_python", "ETC+", "(0.1 1 demo re-init)", "20210818temp_controllerlogging_controller"];
 experiments{2} = ["20210817etc_no_trigger_heartbeat30_python", "ETC", "(no trigger)", "20210817etc_no_trigger_heartbeat30_controller"];
 experiments{3} = ["20210815etc0-1_1_python", "ETC", "(0.1 1)", "20210815etc0-1_1_controller"];
+% has an error, but late in the experiment, so probably still usefull
 experiments{4} = ["20210815test0-1_1_python", "ETC+", "(0.1 1)", "20210815test0-1_1_controller"];
 experiments{5} = ["20210813etc0-2_2_python", "ETC", "(0.2 2)", "20210813etc0-2_2_controller"];
 experiments{6} = ["20210813test0-2_2_python", "ETC+", "(0.2 2)", "20210813test0-2_2_controller"];
-% has an error, but late in the experiment, so probably still usefull
 
 
 for iExperiments = 1: nExperiments
@@ -44,7 +31,6 @@ for iExperiments = 1: nExperiments
     fileName1 = sprintf('%s.mat', experimentNameSim);
     fileName2 = sprintf('%s.mat', experimentNameCtrl);
     fileName3 = sprintf('%s.mat', "sim_0-01-1");
-    %fileName3 = sprintf('%s.mat', "sim_forcetrigger");
 
     
     %% Load cached data
@@ -82,7 +68,7 @@ for iExperiments = 1: nExperiments
         yyaxis left
         plot(sensors.radio_log');
         ylabel('radio on (ms)')
-        ylim([0 100]) % fix scale for comparison and crop to avoid scaling caused by single outliers
+        ylim([0 80]) % fix scale for comparison and crop to avoid scaling caused by single outliers
 
         hold on;
         yyaxis right
@@ -90,17 +76,13 @@ for iExperiments = 1: nExperiments
 
         xlabel('time (s)')
         ylabel('total radio on (s)')
-        ylim([0 80]) % fix scale for comparison
+        ylim([0 50]) % fix scale for comparison
         legend('FF1', 'FF2', 'FF3');
 
         saveFigureEps(sprintf("%s-radio", experimentNameSim));
 
         title("Radio on");
     end
-
-%     % slice to only use the beginning
-%     sensors.radio_log = sensors.radio_log(:,1:800);
-%     sensors.y_log = sensors.y_log(:,1:800);
 
     % take average of 3 FF for more accurate result
     total_on = (sum(sum(sensors.radio_log'))/3)/1000; %s
